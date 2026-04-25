@@ -312,6 +312,85 @@
   .system-header h3 { font-size: 14px; font-weight: 700; color: var(--text); }
   .system-header .system-note { font-size: 12px; color: var(--dim); }
 
+  /* ── Shipped badge (Sprint 2+) ── */
+  .status-badge.shipped {
+    background: rgba(52,211,153,0.12);
+    color: #6ee7b7;
+    border-color: rgba(52,211,153,0.25);
+  }
+
+  /* ── Live links block ── */
+  .live-links-block {
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  .live-links-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--accent3);
+    margin-bottom: 14px;
+  }
+  .live-links-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .live-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: rgba(79,142,247,0.08);
+    border: 1px solid rgba(79,142,247,0.22);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .live-link:hover { background: rgba(79,142,247,0.16); text-decoration: none; }
+  .live-link .live-dot {
+    width: 6px; height: 6px;
+    background: var(--accent3);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Done sprint card ── */
+  .sprint-done {
+    background: rgba(52,211,153,0.04);
+    border: 1px solid rgba(52,211,153,0.18);
+    border-radius: 12px;
+    padding: 22px 18px;
+    opacity: 0.8;
+    position: relative;
+  }
+  .sprint-done .sprint-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: var(--accent3);
+    margin-bottom: 10px;
+  }
+  .sprint-done .sprint-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .sprint-done .sprint-check {
+    font-size: 11px;
+    color: var(--accent3);
+  }
+
   /* ── Footer ── */
   footer {
     padding: 28px 0;
@@ -329,7 +408,7 @@
   <div class="container">
     <div class="header-inner">
       <div>
-        <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 1</div>
+        <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 2</div>
         <h1>AI Builder Plan<br><span>Omo Fabs</span></h1>
         <div class="date-badge">April 21, 2026</div>
       </div>
@@ -574,6 +653,114 @@
   </div>
 </section>
 
+<!-- ══════════════════════════════════════ SPRINT 2 ══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🏗</span> Sprint 2 — What I Built</h2>
+
+    <!-- ── #1 Kanban Dashboard + Notion Backend ── -->
+    <div class="build-card p1">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#1 · Dashboard</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,142,247,0.15);color:#7eb5fa;">📋 Kanban + Notion</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">A live Kanban board wired directly to Notion — drag a card, the database updates in real time. No manual status tracking, no copy-paste between tools.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What I Built</div>
+          <p>ai-builder-dashboard.html: 7 automation ideas as draggable cards across Suggested / To Build / In Progress / Done columns. Animated gradient mesh background, confetti on Done, priority badges, effort and hours pills.</p>
+        </div>
+        <div>
+          <div class="build-col-label">The Backend</div>
+          <p>AI Automation Roadmap database in Notion. <code>/api/roadmap</code> serverless handler: GET loads all rows on page open, PATCH fires on every card drop. State lives in Notion — board reloads anywhere, any device, always current.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · 1 session</span>
+        <span class="badge badge-hours">Zero manual status updates</span>
+        <span class="badge-tools">Vanilla JS + Notion API + Vercel serverless</span>
+      </div>
+    </div>
+
+    <!-- ── #2 Automation Advisor Agent ── -->
+    <div class="build-card p2">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#2 · Agent</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.15);color:#c4b5fd;">🤖 Automation Advisor</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">A Claude Code skill that reads my live roadmap and session history, then delivers a 60-second briefing: top priorities, anything stalled, and one automation to add next.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What It Does</div>
+          <p>Runs two parallel subagents on <code>/automation-advisor</code>: Mode 1 fetches the Notion roadmap and surfaces High-priority items and anything needing definition. Mode 2 scans recent Claude Code session transcripts for manually-done tasks worth automating.</p>
+        </div>
+        <div>
+          <div class="build-col-label">The Output</div>
+          <p>A structured briefing: ranked priorities, a flag for the least-defined In Progress item, and 1–2 card-title suggestions for the Suggested column. Mode 3 (Build Planner) scopes any item into a full sub-build plan and writes it back to Notion.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-quick">Quick Build · 1 session</span>
+        <span class="badge badge-hours">60-sec daily briefing</span>
+        <span class="badge-tools">Claude Code Skill + Notion MCP + filesystem scan</span>
+      </div>
+    </div>
+
+    <!-- ── #3 Live Deployment ── -->
+    <div class="build-card p3">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#3 · Deploy</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(52,211,153,0.15);color:#6ee7b7;">🚀 Vercel</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">All three portfolio pages are publicly deployed on Vercel — shareable links, live Notion API, auto-deploys on every git push.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Live</div>
+          <p>Three HTML pages served as static files. <code>/api/roadmap</code> and <code>/api/submit</code> running as Vercel serverless functions. NOTION_TOKEN and NOTION_DATABASE_ID injected as production env vars — no secrets in the repo.</p>
+        </div>
+        <div>
+          <div class="build-col-label">The Stack</div>
+          <p>GitHub repo <code>ai-builder</code> → Vercel project linked via CLI. <code>vercel --prod</code> on every release. <code>vercel.json</code> rewrites root to the dashboard. Local dev runs the same handler code via Express — no divergence between local and prod.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-quick">Quick Build · 1 session</span>
+        <span class="badge badge-hours">Auto-deploy on push</span>
+        <span class="badge-tools">Vercel CLI + GitHub + Node.js serverless</span>
+      </div>
+    </div>
+
+    <!-- ── Live URLs ── -->
+    <div class="live-links-block">
+      <div class="live-links-label">🌐 Live URLs</div>
+      <div class="live-links-grid">
+        <a class="live-link" href="https://ai-builder-khaki-eight.vercel.app/time-audit.html" target="_blank">
+          <span class="live-dot"></span>Time Audit
+        </a>
+        <a class="live-link" href="https://ai-builder-khaki-eight.vercel.app/ai-builder-plan.html" target="_blank">
+          <span class="live-dot"></span>Automation Plan
+        </a>
+        <a class="live-link" href="https://ai-builder-khaki-eight.vercel.app/ai-builder-dashboard.html" target="_blank">
+          <span class="live-dot"></span>Dashboard
+        </a>
+        <a class="live-link" href="https://ai-builder-khaki-eight.vercel.app/api/roadmap" target="_blank">
+          <span class="live-dot"></span>API · /api/roadmap
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ══════════════════════════════════════ MY SYSTEM ══════════════════════════════════════ -->
 <section>
   <div class="container">
@@ -587,22 +774,22 @@
 
       <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 14px;">
 
-        <!-- S1 current -->
-        <div class="sprint-current">
-          <div class="sprint-label">Sprint 1</div>
+        <!-- S1 done -->
+        <div class="sprint-done">
+          <div class="sprint-label">Sprint 1 ✓</div>
           <div class="sprint-title">Time Audit + Automation Plan</div>
-          <div class="sprint-items">
-            <span>Time audit (Chrome + Calendar)</span>
-            <span>5 automation opportunities</span>
-            <span>AI builder plan document</span>
-          </div>
+          <div class="sprint-check">Time audit · 7 build cards · Plan doc</div>
         </div>
 
-        <!-- S2 -->
-        <div class="sprint-card">
+        <!-- S2 current -->
+        <div class="sprint-current">
           <div class="sprint-label">Sprint 2</div>
-          <div class="sprint-title">Deployed Website + Data Collection Tool</div>
-          <div class="sprint-coming">Coming in Sprint 2</div>
+          <div class="sprint-title">Dashboard + Agent + Deployment</div>
+          <div class="sprint-items">
+            <span>Kanban dashboard (Notion live)</span>
+            <span>Automation Advisor agent</span>
+            <span>Deployed to Vercel</span>
+          </div>
         </div>
 
         <!-- S3 -->
