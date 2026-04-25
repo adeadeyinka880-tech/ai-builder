@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Builder Plan — Omo Fabs</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b25;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --warn: #f59e0b;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --dim: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 52px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d1b35 0%, #0d0f14 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 52px 0 44px;
+  }
+  .header-inner { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .header-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 10px; }
+  .header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; }
+  .header h1 span { color: var(--accent); }
+  .header .date-badge { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .goal-pill {
+    background: rgba(79,142,247,0.1);
+    border: 1px solid rgba(79,142,247,0.28);
+    border-radius: 10px;
+    padding: 16px 20px;
+    max-width: 440px;
+  }
+  .goal-pill .gp-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  .goal-pill p { color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .icon { font-size: 1.15rem; }
+
+  /* ── Time summary ── */
+  .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 768px) { .insight-grid { grid-template-columns: 1fr; } }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .insight-card.i1::before { background: var(--danger); }
+  .insight-card.i2::before { background: var(--warn); }
+  .insight-card.i3::before { background: var(--accent3); }
+  .insight-num {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .insight-card.i1 .insight-num { color: var(--danger); }
+  .insight-card.i2 .insight-num { color: var(--warn); }
+  .insight-card.i3 .insight-num { color: var(--accent3); }
+  .insight-card .insight-headline { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); line-height: 1.4; }
+  .insight-card .insight-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .audit-link-row {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .audit-link-row a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(79,142,247,0.1);
+    border: 1px solid rgba(79,142,247,0.25);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .audit-link-row a:hover { background: rgba(79,142,247,0.18); text-decoration: none; }
+
+  /* ── Build cards ── */
+  .build-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .build-card:hover { border-color: rgba(79,142,247,0.35); }
+  .build-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .build-card.p1::before { background: linear-gradient(90deg, #4f8ef7, #a78bfa); }
+  .build-card.p2::before { background: linear-gradient(90deg, #a78bfa, #34d399); }
+  .build-card.p3::before { background: linear-gradient(90deg, #34d399, #f59e0b); }
+  .build-card.p4::before { background: linear-gradient(90deg, #f59e0b, #fb7185); }
+  .build-card.p5::before { background: linear-gradient(90deg, #fb7185, #67e8f9); }
+
+  .build-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .rank-num {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    background: var(--surface2);
+    border-radius: 20px;
+    color: var(--dim);
+  }
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: rgba(74,85,104,0.35);
+    color: var(--dim);
+    border: 1px solid var(--border);
+  }
+
+  .build-outcome {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+
+  .build-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 0; }
+  @media (max-width: 640px) { .build-cols { grid-template-columns: 1fr; } }
+  .build-col-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .build-col p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  .build-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-quick   { background: rgba(52,211,153,0.12); color: #6ee7b7; }
+  .badge-medium  { background: rgba(245,158,11,0.12); color: #fcd34d; }
+  .badge-big     { background: rgba(167,139,250,0.12); color: #c4b5fd; }
+  .badge-hours   { background: rgba(79,142,247,0.12); color: #7eb5fa; }
+  .badge-tools   { font-size: 12px; color: var(--dim); }
+
+  /* ── Sprint system ── */
+  .sprint-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px) { .sprint-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .sprint-grid { grid-template-columns: 1fr; } }
+
+  .sprint-card {
+    background: rgba(22, 27, 37, 0.6);
+    border: 1px dashed rgba(42,51,71,0.8);
+    border-radius: 12px;
+    padding: 22px 18px;
+    opacity: 0.45;
+    position: relative;
+  }
+  .sprint-card .sprint-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+  .sprint-card .sprint-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .sprint-card .sprint-coming {
+    font-size: 11px;
+    color: var(--dim);
+    border: 1px solid rgba(42,51,71,0.8);
+    border-radius: 4px;
+    padding: 3px 8px;
+    display: inline-block;
+  }
+
+  /* current sprint highlight */
+  .sprint-current {
+    background: rgba(79,142,247,0.07);
+    border: 1px solid rgba(79,142,247,0.22);
+    border-radius: 12px;
+    padding: 22px 18px;
+    position: relative;
+  }
+  .sprint-current::before {
+    content: 'NOW';
+    position: absolute;
+    top: -1px; right: 14px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 0 0 6px 6px;
+  }
+  .sprint-current .sprint-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .sprint-current .sprint-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .sprint-current .sprint-items {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .sprint-current .sprint-items span { display: block; }
+  .sprint-current .sprint-items span::before { content: '→ '; color: var(--accent); }
+
+  /* system wrapper */
+  .system-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .system-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .system-header h3 { font-size: 14px; font-weight: 700; color: var(--text); }
+  .system-header .system-note { font-size: 12px; color: var(--dim); }
+
+  /* ── Footer ── */
+  footer {
+    padding: 28px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ HEADER ══════════════════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <div>
+        <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 1</div>
+        <h1>AI Builder Plan<br><span>Omo Fabs</span></h1>
+        <div class="date-badge">April 21, 2026</div>
+      </div>
+      <div class="goal-pill">
+        <div class="gp-label">#1 Goal</div>
+        <p>Land PrairieFly DroneSec's first government drone security contracts, and build working AI automations for all 6 verticals — law firm, healthcare, accounting, insurance, municipalities, and real estate.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════ TIME SUMMARY ══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🔍</span> What the Time Audit Found</h2>
+
+    <div class="insight-grid">
+
+      <div class="insight-card i1">
+        <div class="insight-num">Finding 1 · Biggest drain</div>
+        <div class="insight-headline">26% of browser time is manual procurement scanning — and it's not converting.</div>
+        <div class="insight-body">Ten government portals visited individually, 121 times in 14 weekdays. No RFP drafts found in Drive. You're doing the research but not producing bids. That gap is the bottleneck.</div>
+      </div>
+
+      <div class="insight-card i2">
+        <div class="insight-num">Finding 2 · Focus problem</div>
+        <div class="insight-headline">Three cert tracks running in parallel. Zero certs finished.</div>
+        <div class="insight-body">ISC2 + ISACA + IIA simultaneously = 154 visits, zero credential earned. Parallel prep dilutes pass rate on all three. Sequencing one to completion first beats three perpetually in-progress.</div>
+      </div>
+
+      <div class="insight-card i3">
+        <div class="insight-num">Finding 3 · Hidden opportunity</div>
+        <div class="insight-headline">The strategy is right. The execution is manual and fragmented.</div>
+        <div class="insight-body">Procurement research + credentialing IS the path to government contracts for a drone security firm. The raw hours are there. Automating the repetitive layer — portal scanning, outreach drafting, intel gathering — is the unlock.</div>
+      </div>
+
+    </div>
+
+    <div class="audit-link-row">
+      <span>Full data behind these findings:</span>
+      <a href="time-audit.html">📄 Full Time Audit →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ WHAT I'M BUILDING ══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">⚡</span> What I'm Building</h2>
+
+    <!-- ── #1 PrairieFly ── -->
+    <div class="build-card p1">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#1 · Highest Impact</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,142,247,0.15);color:#7eb5fa;">🛡 PrairieFly DroneSec</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">PrairieFly wins its first government drone security contract — tenders found automatically, RFP drafted in 30 minutes, not 3 days.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Manually checking 10+ procurement portals for drone/security tenders (121 browser visits in 14 days), then facing a blank page for proposal writing. Research is happening — but it's not converting to submitted bids.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Nightly agent monitors all portals for UAS/counter-drone keywords → morning digest with closing dates and fit scores. On match: paste tender PDF → Claude drafts full RFP response from PrairieFly's capability profile. Human reviews, submits.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · half day</span>
+        <span class="badge badge-hours">6–8 hrs/week reclaimed</span>
+        <span class="badge-tools">Claude API + Python scraper + Gmail + Google Docs</span>
+      </div>
+    </div>
+
+    <!-- ── #2 Law Firm ── -->
+    <div class="build-card p2">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#2</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.15);color:#c4b5fd;">⚖️ Law Firm</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Law firm associates spend their time on legal judgment — not manual case research and boilerplate drafting.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Associates spend 2–4 hours per matter manually searching CanLII for relevant precedents, then drafting client letters and memos from scratch. Billable time is eaten by lookup and formatting work anyone could automate.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude + CanLII MCP searches case law by jurisdiction and issue → extracts relevant precedents with citations → drafts client correspondence and memo sections. Attorney reviews, edits, signs. Research time cut from hours to minutes.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · half day</span>
+        <span class="badge badge-hours">8–12 hrs/week per firm</span>
+        <span class="badge-tools">Claude API + CanLII MCP + Google Docs</span>
+      </div>
+    </div>
+
+    <!-- ── #3 Healthcare ── -->
+    <div class="build-card p3">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#3</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(52,211,153,0.15);color:#6ee7b7;">🏥 Healthcare</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Healthcare admin staff process patient intake, referrals, and prior authorizations without manually re-entering data across systems.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Staff spend 20–40 minutes per patient manually keying the same data into the EHR, insurer portal, and referral forms — then drafting prior auth letters by hand and waiting days for decisions.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude reads intake forms, pre-populates EHR fields and prior auth templates, flags missing info before submission, and drafts referral letters. Human confirms and sends. HIPAA-compliant with data staying in client systems.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-big">Big Build · multi-session</span>
+        <span class="badge badge-hours">10–15 hrs/week per clinic</span>
+        <span class="badge-tools">Claude API + FHIR/EHR integration + Anthropic Enterprise (HIPAA BAA)</span>
+      </div>
+    </div>
+
+    <!-- ── #4 Accounting ── -->
+    <div class="build-card p4">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#4</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,0.15);color:#fcd34d;">🧾 Accounting</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Accounting firms close client books and deliver management reports 3× faster — AI handles categorization and reconciliation, staff handle judgment calls.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Staff manually categorize transactions, reconcile accounts, and format monthly reports in Excel — hours per client per month. Repetitive work that scales poorly as client count grows.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude + Xero/QuickBooks API pulls transactions, categorizes by client rules, flags anomalies for staff review, and generates formatted management reports. Staff review exceptions and approve. Month-end drops from days to hours.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · half day</span>
+        <span class="badge badge-hours">6–10 hrs/week per firm</span>
+        <span class="badge-tools">Claude API + Xero MCP or QuickBooks API + Google Sheets</span>
+      </div>
+    </div>
+
+    <!-- ── #5 Insurance ── -->
+    <div class="build-card p5">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#5</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(251,113,133,0.15);color:#fda4af;">🛡 Insurance</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Insurance brokers process claims intake and policy comparisons in minutes — no manual policy lookup, no re-keying claim details.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Brokers manually collect claim details from clients, cross-reference policy schedules, and draft adjustment letters — bottlenecked by lookup and formatting work that adds days to every claim cycle.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude reads claim submission documents, matches against policy terms, generates coverage analysis and adjustment recommendation, and drafts client communication. Broker reviews and approves. Turnaround drops from days to same-day.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · half day</span>
+        <span class="badge badge-hours">5–8 hrs/week per broker</span>
+        <span class="badge-tools">Claude API + Socotra MCP + document ingestion</span>
+      </div>
+    </div>
+
+    <!-- ── #6 Municipalities ── -->
+    <div class="build-card" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#67e8f9,#4f8ef7);"></div>
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#6</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(103,232,249,0.15);color:#67e8f9;">🏛 Municipalities</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Municipal staff process permit applications and prepare council briefings without manually cross-checking bylaws or formatting reports.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Staff manually review permit applications against bylaw requirements, prepare staff reports for council, and track procurement thresholds — all in separate systems with no workflow automation. Review cycles take weeks.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude reads application submissions, checks against bylaw rules and zoning schedules, identifies deficiencies, and drafts staff reports and approval or rejection letters. Council gets pre-formatted briefing packages. Review time cut by 60%.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-big">Big Build · multi-session</span>
+        <span class="badge badge-hours">8–12 hrs/week per municipality</span>
+        <span class="badge-tools">Claude API + bylaw document ingestion + Google Docs</span>
+      </div>
+    </div>
+
+    <!-- ── #7 Real Estate ── -->
+    <div class="build-card" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#a78bfa,#f59e0b);"></div>
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#7</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.12);color:#c4b5fd;">🏠 Real Estate</span>
+        </div>
+        <span class="status-badge">Not Started</span>
+      </div>
+      <div class="build-outcome">Real estate agents deliver AI-generated property insights, CMAs, and offer drafts to clients same-day — no manual data pull, no blank-page writing.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's Happening Today</div>
+          <p>Agents manually pull comparable sales from MLS, format CMA reports in Word, and draft offer letters and disclosure packages from scratch — hours of admin per transaction that could be templated and automated.</p>
+        </div>
+        <div>
+          <div class="build-col-label">Automated Version</div>
+          <p>Claude aggregates comparable sales data, generates a formatted CMA report, and drafts offer letters and disclosure summaries from property details. Agent reviews, personalizes, and sends. Transaction admin drops from hours to minutes.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · half day</span>
+        <span class="badge badge-hours">4–6 hrs/week per agent</span>
+        <span class="badge-tools">Claude API + MLS data + Cotality MCP + Google Docs</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ MY SYSTEM ══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🗂</span> My System</h2>
+
+    <div class="system-wrapper">
+      <div class="system-header">
+        <h3>Sprint Roadmap — L2 AI Builder Portfolio</h3>
+        <span class="system-note">Sprints S2–S6 unlock as S1 completes</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 14px;">
+
+        <!-- S1 current -->
+        <div class="sprint-current">
+          <div class="sprint-label">Sprint 1</div>
+          <div class="sprint-title">Time Audit + Automation Plan</div>
+          <div class="sprint-items">
+            <span>Time audit (Chrome + Calendar)</span>
+            <span>5 automation opportunities</span>
+            <span>AI builder plan document</span>
+          </div>
+        </div>
+
+        <!-- S2 -->
+        <div class="sprint-card">
+          <div class="sprint-label">Sprint 2</div>
+          <div class="sprint-title">Deployed Website + Data Collection Tool</div>
+          <div class="sprint-coming">Coming in Sprint 2</div>
+        </div>
+
+        <!-- S3 -->
+        <div class="sprint-card">
+          <div class="sprint-label">Sprint 3</div>
+          <div class="sprint-title">Automated n8n or Claude Routines Workflow</div>
+          <div class="sprint-coming">Coming in Sprint 3</div>
+        </div>
+
+        <!-- S4 -->
+        <div class="sprint-card">
+          <div class="sprint-label">Sprint 4</div>
+          <div class="sprint-title">Knowledge Wiki Context System</div>
+          <div class="sprint-coming">Coming in Sprint 4</div>
+        </div>
+
+        <!-- S5 -->
+        <div class="sprint-card">
+          <div class="sprint-label">Sprint 5</div>
+          <div class="sprint-title">Custom Agentic Workflow</div>
+          <div class="sprint-coming">Coming in Sprint 5</div>
+        </div>
+
+      </div>
+
+      <!-- S6 full width -->
+      <div style="margin-top:14px;">
+        <div class="sprint-card" style="display:flex; align-items:center; gap:20px; opacity:0.45;">
+          <div>
+            <div class="sprint-label" style="margin-bottom:4px;">Sprint 6</div>
+            <div class="sprint-title" style="margin-bottom:0;">Eval System — Tested and Documented</div>
+          </div>
+          <div class="sprint-coming" style="flex-shrink:0;">Coming in Sprint 6</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ FOOTER ══════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    AI Builder Automation Portfolio — April 21, 2026 &nbsp;|&nbsp; Built in L2
+  </div>
+</footer>
+
+</body>
+</html>

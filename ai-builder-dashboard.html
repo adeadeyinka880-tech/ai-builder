@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automation Dashboard — Omo Fabs</title>
+<style>
+  /* ── Design tokens (identical to time-audit + plan files) ── */
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #161b25;
+    --surface2:  #1e2535;
+    --border:    #2a3347;
+    --accent:    #4f8ef7;
+    --accent2:   #a78bfa;
+    --accent3:   #34d399;
+    --warn:      #f59e0b;
+    --danger:    #f87171;
+    --text:      #e2e8f0;
+    --muted:     #8892a4;
+    --dim:       #4a5568;
+
+    --col-suggested-bg:     #131519;
+    --col-suggested-border: #1e2228;
+    --col-suggested-head:   #3a3f4a;
+    --col-tobuild-head:     var(--accent);
+    --col-inprogress-head:  var(--warn);
+    --col-done-head:        var(--accent3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d1b35 0%, #0d0f14 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 32px 24px;
+    flex-shrink: 0;
+  }
+  .header-inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .header-eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .header-actions a,
+  .header-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--dim); text-decoration: none; }
+  .btn-primary {
+    background: rgba(79,142,247,0.15);
+    border: 1px solid rgba(79,142,247,0.3);
+    color: var(--accent);
+  }
+  .btn-primary:hover { background: rgba(79,142,247,0.25); text-decoration: none; }
+  .save-indicator {
+    font-size: 11px;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .save-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    transition: background 0.3s;
+  }
+  .save-dot.saving { background: var(--warn); }
+
+  /* ── Board layout ── */
+  .board-wrap {
+    flex: 1;
+    padding: 28px 24px 40px;
+    overflow-x: auto;
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: 240px 1fr 1fr 1fr;
+    gap: 16px;
+    min-width: 900px;
+    align-items: start;
+  }
+
+  /* ── Column ── */
+  .col {
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+  }
+
+  /* Suggested — muted */
+  .col[data-col="suggested"] {
+    background: var(--col-suggested-bg);
+    border: 1px dashed var(--col-suggested-border);
+    opacity: 0.75;
+  }
+  .col[data-col="suggested"] .col-header-bar {
+    background: transparent;
+    border-bottom: 1px solid var(--col-suggested-border);
+  }
+  .col[data-col="suggested"] .col-title { color: var(--col-suggested-head); }
+  .col[data-col="suggested"] .col-count {
+    background: rgba(58,63,74,0.4);
+    color: var(--col-suggested-head);
+  }
+  .col[data-col="suggested"] .col-empty-hint { color: #3a3f4a; }
+
+  /* Normal columns */
+  .col[data-col="to-build"],
+  .col[data-col="in-progress"],
+  .col[data-col="done"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .col-header-bar {
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .col-indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .col[data-col="to-build"]    .col-indicator { background: var(--col-tobuild-head); }
+  .col[data-col="in-progress"] .col-indicator { background: var(--col-inprogress-head); }
+  .col[data-col="done"]        .col-indicator { background: var(--col-done-head); }
+  .col[data-col="suggested"]   .col-indicator { background: var(--col-suggested-head); }
+
+  .col-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    flex: 1;
+  }
+  .col[data-col="to-build"]    .col-title { color: var(--col-tobuild-head); }
+  .col[data-col="in-progress"] .col-title { color: var(--col-inprogress-head); }
+  .col[data-col="done"]        .col-title { color: var(--col-done-head); }
+
+  .col-count {
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+  }
+  .col[data-col="to-build"]    .col-count { background: rgba(79,142,247,0.15);   color: var(--col-tobuild-head); }
+  .col[data-col="in-progress"] .col-count { background: rgba(245,158,11,0.15);   color: var(--col-inprogress-head); }
+  .col[data-col="done"]        .col-count { background: rgba(52,211,153,0.15);   color: var(--col-done-head); }
+
+  /* Drop zone */
+  .col-cards {
+    padding: 12px;
+    min-height: 120px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background 0.15s;
+    border-radius: 0 0 12px 12px;
+  }
+  .col-cards.drag-over {
+    background: rgba(79,142,247,0.05);
+    outline: 2px dashed rgba(79,142,247,0.3);
+    outline-offset: -4px;
+    border-radius: 0 0 12px 12px;
+  }
+  .col[data-col="suggested"] .col-cards.drag-over {
+    background: rgba(58,63,74,0.15);
+    outline-color: rgba(58,63,74,0.5);
+  }
+
+  .col-empty-hint {
+    font-size: 12px;
+    color: var(--dim);
+    text-align: center;
+    padding: 24px 12px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    line-height: 1.5;
+  }
+  .col[data-col="suggested"] .col-empty-hint {
+    border-color: var(--col-suggested-border);
+    font-style: italic;
+  }
+
+  /* Drop ghost line */
+  .drop-ghost {
+    height: 3px;
+    background: rgba(79,142,247,0.5);
+    border-radius: 2px;
+    margin: 2px 0;
+    display: none;
+  }
+  .drop-ghost.visible { display: block; }
+
+  /* ── Card ── */
+  .kanban-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+    position: relative;
+  }
+  .kanban-card:hover {
+    border-color: var(--dim);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card.dragging {
+    opacity: 0.35;
+    border-color: var(--accent);
+  }
+  .col[data-col="done"] .kanban-card {
+    opacity: 0.7;
+  }
+  .col[data-col="done"] .kanban-card:hover { opacity: 1; }
+
+  /* Vertical colour strip */
+  .kanban-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    border-radius: 10px 0 0 10px;
+  }
+  .kanban-card[data-vertical="prairifly"]::before    { background: var(--accent); }
+  .kanban-card[data-vertical="law"]::before          { background: var(--accent2); }
+  .kanban-card[data-vertical="healthcare"]::before   { background: var(--accent3); }
+  .kanban-card[data-vertical="accounting"]::before   { background: var(--warn); }
+  .kanban-card[data-vertical="insurance"]::before    { background: var(--danger); }
+  .kanban-card[data-vertical="municipalities"]::before { background: #67e8f9; }
+  .kanban-card[data-vertical="realestate"]::before   { background: var(--accent2); }
+  .kanban-card[data-vertical="suggested"]::before    { background: var(--dim); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-left: 8px;
+  }
+  .card-vertical-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .priority-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .priority-high   { background: rgba(248,113,113,0.15); color: #fca5a5; }
+  .priority-medium { background: rgba(245,158,11,0.15);  color: #fcd34d; }
+  .priority-low    { background: rgba(52,211,153,0.15);  color: #6ee7b7; }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    padding-left: 8px;
+    margin-bottom: 5px;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    padding-left: 8px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 8px;
+    flex-wrap: wrap;
+  }
+  .effort-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(42,51,71,0.8);
+    color: var(--dim);
+  }
+  .hours-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(79,142,247,0.1);
+    color: #6ba3fb;
+  }
+
+  /* Done checkmark overlay */
+  .col[data-col="done"] .card-name::after {
+    content: ' ✓';
+    color: var(--accent3);
+    font-size: 11px;
+  }
+
+  /* ── Done celebration: green glow pulse ──────────────────────
+     Animates box-shadow AND opacity so the glow is vivid even
+     though .col[data-col="done"] .kanban-card dims cards to 0.7.
+     CSS animations win over normal cascade values, so no
+     !important needed.
+  ────────────────────────────────────────────────────────────── */
+  @keyframes donePulse {
+    0%   { box-shadow: 0 0  0px 0px rgba(52,211,153,0);    opacity: 0.7; }
+    18%  { box-shadow: 0 0 20px 6px rgba(52,211,153,0.55); opacity: 1;   }
+    60%  { box-shadow: 0 0 12px 3px rgba(52,211,153,0.22); opacity: 1;   }
+    100% { box-shadow: 0 0  0px 0px rgba(52,211,153,0);    opacity: 0.7; }
+  }
+  .card-done-pulse {
+    animation: donePulse 620ms ease-out forwards;
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 20px 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── Drag-over cursor fix ── */
+  .col-cards * { pointer-events: none; }
+  .col-cards .kanban-card { pointer-events: auto; }
+
+  /* ══════════════════════════════════════════════
+     Animated gradient mesh background
+     – position: fixed, z-index: -1  →  sits above the
+       body canvas but behind all static content
+     – transform-only animations  →  compositor-only,
+       zero layout/paint cost on old hardware
+     – alternate direction  →  seamless reverse loop,
+       never a visible "reset jump"
+     ══════════════════════════════════════════════ */
+  .bg-mesh {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    will-change: transform;
+    /* Softness from gradient falloff — no filter:blur() needed */
+  }
+
+  /* Blue — top-left anchor */
+  .blob-1 {
+    width: 75vw;  height: 65vh;
+    background: radial-gradient(ellipse at center,
+      rgba(79,142,247,0.11) 0%, transparent 68%);
+    top: -22%;  left: -18%;
+    animation: drift1 43s ease-in-out infinite alternate;
+  }
+
+  /* Purple — top-right anchor */
+  .blob-2 {
+    width: 60vw;  height: 75vh;
+    background: radial-gradient(ellipse at center,
+      rgba(167,139,250,0.10) 0%, transparent 65%);
+    top: -12%;  right: -22%;
+    animation: drift2 53s ease-in-out infinite alternate;
+  }
+
+  /* Green — bottom-left anchor */
+  .blob-3 {
+    width: 80vw;  height: 55vh;
+    background: radial-gradient(ellipse at center,
+      rgba(52,211,153,0.09) 0%, transparent 70%);
+    bottom: -18%;  left: -8%;
+    animation: drift3 39s ease-in-out infinite alternate;
+  }
+
+  /* Yellow — bottom-right anchor */
+  .blob-4 {
+    width: 55vw;  height: 60vh;
+    background: radial-gradient(ellipse at center,
+      rgba(245,158,11,0.09) 0%, transparent 65%);
+    bottom: -16%;  right: -14%;
+    animation: drift4 47s ease-in-out infinite alternate;
+  }
+
+  /* Soft blue — centre drifter, keeps the middle alive */
+  .blob-5 {
+    width: 55vw;  height: 55vh;
+    background: radial-gradient(ellipse at center,
+      rgba(79,142,247,0.07) 0%, transparent 62%);
+    top: 35%;  left: 28%;
+    animation: drift5 61s ease-in-out infinite alternate;
+  }
+
+  /* Each keyframe set moves in a different direction so they
+     never fall into a synchronised pattern                   */
+  @keyframes drift1 {
+    0%   { transform: translate(0,    0)    scale(1);    }
+    35%  { transform: translate(11vw, 9vh)  scale(1.04); }
+    70%  { transform: translate(4vw,  17vh) scale(0.97); }
+    100% { transform: translate(16vw, 11vh) scale(1.02); }
+  }
+  @keyframes drift2 {
+    0%   { transform: translate(0,     0)    scale(1);    }
+    40%  { transform: translate(-9vw,  13vh) scale(1.03); }
+    75%  { transform: translate(-17vw, 4vh)  scale(0.96); }
+    100% { transform: translate(-7vw,  19vh) scale(1.02); }
+  }
+  @keyframes drift3 {
+    0%   { transform: translate(0,    0)     scale(1);    }
+    45%  { transform: translate(14vw, -9vh)  scale(1.05); }
+    100% { transform: translate(7vw,  -17vh) scale(0.97); }
+  }
+  @keyframes drift4 {
+    0%   { transform: translate(0,     0)     scale(1);    }
+    30%  { transform: translate(-11vw, -7vh)  scale(1.03); }
+    65%  { transform: translate(-4vw,  -14vh) scale(0.96); }
+    100% { transform: translate(-14vw, -9vh)  scale(1.04); }
+  }
+  @keyframes drift5 {
+    0%   { transform: translate(0,    0)    scale(1);    }
+    25%  { transform: translate(-7vw, 5vh)  scale(1.06); }
+    55%  { transform: translate(6vw,  -7vh) scale(0.94); }
+    80%  { transform: translate(-2vw, 11vh) scale(1.02); }
+    100% { transform: translate(9vw,  -4vh) scale(0.97); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated gradient mesh — fixed at z:-1, behind all content -->
+<div class="bg-mesh" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+</div>
+
+<!-- ══════════════════════════════ HEADER ══════════════════════════════ -->
+<header class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 1</div>
+      <h1>Automation Dashboard — <span>Omo Fabs</span></h1>
+      <div class="header-sub">Drag cards between columns · State saves automatically in this browser</div>
+    </div>
+    <div class="header-actions">
+      <div class="save-indicator">
+        <div class="save-dot" id="saveDot"></div>
+        <span id="saveLabel">Saved</span>
+      </div>
+      <a href="ai-builder-plan.html" class="btn-ghost">← AI Builder Plan</a>
+      <button class="btn-ghost" onclick="resetBoard()">Reset board</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════ BOARD ══════════════════════════════ -->
+<div class="board-wrap" style="position:relative">
+  <!-- Loading overlay — shown while fetching from Notion -->
+  <div id="board-loading" style="display:none;position:absolute;inset:0;z-index:10;align-items:center;justify-content:center;background:rgba(13,15,20,0.7);backdrop-filter:blur(4px);border-radius:12px;">
+    <div style="color:var(--muted);font-size:14px;display:flex;align-items:center;gap:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.8s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      Loading from Notion…
+    </div>
+  </div>
+  <div class="board" id="board">
+
+    <!-- SUGGESTED -->
+    <div class="col" data-col="suggested">
+      <div class="col-header-bar">
+        <div class="col-indicator"></div>
+        <span class="col-title">Suggested</span>
+        <span class="col-count" id="count-suggested">0</span>
+      </div>
+      <div class="col-cards" id="col-suggested"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="col-empty-hint">Ideas from others will appear here</div>
+      </div>
+    </div>
+
+    <!-- TO BUILD -->
+    <div class="col" data-col="to-build">
+      <div class="col-header-bar">
+        <div class="col-indicator"></div>
+        <span class="col-title">To Build</span>
+        <span class="col-count" id="count-to-build">0</span>
+      </div>
+      <div class="col-cards" id="col-to-build"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="col-empty-hint">No items yet</div>
+      </div>
+    </div>
+
+    <!-- IN PROGRESS -->
+    <div class="col" data-col="in-progress">
+      <div class="col-header-bar">
+        <div class="col-indicator"></div>
+        <span class="col-title">In Progress</span>
+        <span class="col-count" id="count-in-progress">0</span>
+      </div>
+      <div class="col-cards" id="col-in-progress"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="col-empty-hint">No items yet</div>
+      </div>
+    </div>
+
+    <!-- DONE -->
+    <div class="col" data-col="done">
+      <div class="col-header-bar">
+        <div class="col-indicator"></div>
+        <span class="col-title">Done</span>
+        <span class="col-count" id="count-done">0</span>
+      </div>
+      <div class="col-cards" id="col-done"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="col-empty-hint">Nothing shipped yet — let's change that</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════ FOOTER ══════════════════════════════ -->
+<footer>
+  AI Builder Automation Portfolio — April 21, 2026 &nbsp;|&nbsp; Built in L2
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  Card definitions  (source of truth)
+// ─────────────────────────────────────────────────────────────
+const CARDS = [
+  // ── P1 · PrairieFly DroneSec ─────────────────────────────────
+  {
+    id: 'prairifly-contracts',
+    vertical: 'prairifly',
+    verticalLabel: '🛡 PrairieFly DroneSec',
+    name: 'Government Contract Pipeline',
+    desc: 'Tender monitor + RFP auto-draft for drone security bids',
+    priority: 'high',
+    effort: 'Medium Lift',
+    hours: '6–8 hrs/week',
+  },
+  // ── P1 · Law Firms ───────────────────────────────────────────
+  // Playbook workflows 1–4: Legal Research, Document Drafting,
+  // Client Intake, Deadline Tracking (LegalContext MCP + Clio)
+  {
+    id: 'law-research-drafting',
+    vertical: 'law',
+    verticalLabel: '⚖️ Law Firm',
+    name: 'Legal Research & Document Workflow',
+    desc: 'Cowork Skill searches CanLII/PACER, synthesizes case memos, drafts contracts and demand letters from Clio matter data, and auto-packages court filings',
+    priority: 'high',
+    effort: 'Medium Lift',
+    hours: '8–12 hrs/week',
+  },
+  // ── P1 · Healthcare ──────────────────────────────────────────
+  // Playbook workflow 1: Prior Authorization — biggest client pain,
+  // most hours saved; FHIR MCP → payer portal (Availity/NaviHealth)
+  {
+    id: 'health-prior-auth',
+    vertical: 'healthcare',
+    verticalLabel: '🏥 Healthcare',
+    name: 'Prior Authorization Automation',
+    desc: 'Claude API reads patient charts via FHIR, extracts ICD-10/CPT codes, auto-submits to Availity/NaviHealth, and drafts denial appeal letters with clinical justification',
+    priority: 'high',
+    effort: 'Big Build',
+    hours: '10–15 hrs/week',
+  },
+  // ── P2 · Accounting ──────────────────────────────────────────
+  // Playbook workflows 1–3: Bank Recon + Categorization + Month-End
+  // Xero Official MCP is production-ready — fastest path to demo
+  {
+    id: 'acct-recon-close',
+    vertical: 'accounting',
+    verticalLabel: '🧾 Accounting',
+    name: 'Bank Recon & Month-End Close',
+    desc: 'Xero MCP pulls unreconciled transactions, AI fuzzy-matches and categorizes them, then executes the full close checklist and generates client-ready financial reports',
+    priority: 'medium',
+    effort: 'Medium Lift',
+    hours: '6–10 hrs/week',
+  },
+  // ── P2 · Insurance ───────────────────────────────────────────
+  // Playbook workflow 2: Policy Renewal Processing — repeatable,
+  // high value; Socotra MCP + carrier portal Chrome agent
+  {
+    id: 'ins-renewals',
+    vertical: 'insurance',
+    verticalLabel: '🛡 Insurance',
+    name: 'Policy Renewal Pipeline',
+    desc: 'Cowork tracks 90/60/30-day renewals in Socotra, Chrome agent pulls carrier comparison quotes, and AI generates personalized renewal presentations for each client',
+    priority: 'medium',
+    effort: 'Medium Lift',
+    hours: '5–8 hrs/week',
+  },
+  // ── P2 · Municipalities ──────────────────────────────────────
+  // Playbook workflows 1+4: Meeting Minutes + Permit Processing
+  // Audio → Whisper → Claude drafts official minutes per Robert's Rules
+  {
+    id: 'muni-minutes-permits',
+    vertical: 'municipalities',
+    verticalLabel: '🏛 Municipalities',
+    name: 'Meeting Minutes & Permit Automation',
+    desc: 'Meeting audio → transcript → AI drafts official minutes (motions, votes, action items per Robert\'s Rules), prepares agenda packets, and runs completeness checks on permit applications',
+    priority: 'medium',
+    effort: 'Medium Lift',
+    hours: '6–10 hrs/week',
+  },
+  // ── P3 · Real Estate / Consulting / Nonprofit ────────────────
+  // Playbook: CMA via Cotality MCP + consulting proposal generator
+  {
+    id: 're-cma-proposals',
+    vertical: 'realestate',
+    verticalLabel: '🏠 RE · Consulting · Nonprofit',
+    name: 'CMA Reports & Proposal Generator',
+    desc: 'Cotality MCP pulls comparable sales for professional CMA reports; Cowork builds consulting proposals from CRM + templates; nonprofit grant drafts from funder-matched templates',
+    priority: 'low',
+    effort: 'Small Lift',
+    hours: '4–6 hrs/week',
+  },
+];
+
+const DEFAULT_COL = 'to-build';
+
+// ─────────────────────────────────────────────────────────────
+//  In-memory state  (source of truth = Notion)
+// ─────────────────────────────────────────────────────────────
+let boardState = {};   // { cardId → colName }
+let notionIds  = {};   // { cardId → notionPageId }
+
+// Build name → cardId lookup once
+const NAME_TO_ID = {};
+CARDS.forEach(c => { NAME_TO_ID[c.name] = c.id; });
+
+// Column key ↔ Notion Status label
+const COL_TO_STATUS = {
+  'suggested':   'Suggested',
+  'to-build':    'To Build',
+  'in-progress': 'In Progress',
+  'done':        'Done',
+};
+
+function getCardCol(id) {
+  return boardState[id] || DEFAULT_COL;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Save indicator
+// ─────────────────────────────────────────────────────────────
+function setSaveIndicator(state) {
+  const dot   = document.getElementById('saveDot');
+  const label = document.getElementById('saveLabel');
+  if (state === 'saving') {
+    dot.classList.add('saving');
+    label.textContent = 'Saving…';
+  } else if (state === 'saved') {
+    setTimeout(() => { dot.classList.remove('saving'); label.textContent = 'Saved'; }, 600);
+  } else {
+    dot.classList.remove('saving'); label.textContent = 'Error saving';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Notion API helpers
+// ─────────────────────────────────────────────────────────────
+async function fetchRoadmap() {
+  const res = await fetch('/api/roadmap');
+  if (!res.ok) throw new Error(`GET /api/roadmap → ${res.status}`);
+  return res.json();
+}
+
+async function patchStatus(cardId, col) {
+  const notionId = notionIds[cardId];
+  if (!notionId) return;
+  setSaveIndicator('saving');
+  try {
+    const res = await fetch('/api/roadmap', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id: notionId, col }),
+    });
+    if (!res.ok) throw new Error(`PATCH /api/roadmap → ${res.status}`);
+    setSaveIndicator('saved');
+  } catch (err) {
+    console.error('[roadmap] patch failed:', err);
+    setSaveIndicator('error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Render
+// ─────────────────────────────────────────────────────────────
+function buildCardEl(card) {
+  const el = document.createElement('div');
+  el.className = 'kanban-card';
+  el.draggable = true;
+  el.dataset.id = card.id;
+  el.dataset.vertical = card.vertical;
+
+  const priorityClass = {high:'priority-high', medium:'priority-medium', low:'priority-low'}[card.priority];
+  const priorityLabel = {high:'High', medium:'Medium', low:'Low'}[card.priority];
+
+  el.innerHTML = `
+    <div class="card-top">
+      <span class="card-vertical-tag">${card.verticalLabel}</span>
+      <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
+    </div>
+    <div class="card-name">${card.name}</div>
+    <div class="card-desc">${card.desc}</div>
+    <div class="card-footer">
+      <span class="effort-pill">${card.effort}</span>
+      <span class="hours-pill">${card.hours}</span>
+    </div>
+  `;
+
+  el.addEventListener('dragstart', onDragStart);
+  el.addEventListener('dragend',   onDragEnd);
+  return el;
+}
+
+function render() {
+  const colIds = ['suggested','to-build','in-progress','done'];
+
+  // Clear cards (keep empty hints)
+  colIds.forEach(id => {
+    const el = document.getElementById('col-' + id);
+    Array.from(el.querySelectorAll('.kanban-card')).forEach(c => c.remove());
+  });
+
+  // Place cards from in-memory boardState
+  CARDS.forEach(card => {
+    const colId = getCardCol(card.id);
+    const colEl = document.getElementById('col-' + colId);
+    if (colEl) colEl.appendChild(buildCardEl(card));
+  });
+
+  // Update counts and empty hints
+  colIds.forEach(id => {
+    const colEl = document.getElementById('col-' + id);
+    const cards = colEl.querySelectorAll('.kanban-card');
+    const count = cards.length;
+    document.getElementById('count-' + id).textContent = count;
+
+    // Show/hide empty hint
+    const hint = colEl.querySelector('.col-empty-hint');
+    if (hint) hint.style.display = count === 0 ? '' : 'none';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Drag & drop
+// ─────────────────────────────────────────────────────────────
+let draggedId = null;
+
+function onDragStart(e) {
+  draggedId = e.currentTarget.dataset.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedId);
+}
+
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  // Clear all drag-over highlights
+  document.querySelectorAll('.col-cards').forEach(c => c.classList.remove('drag-over'));
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const colCards = e.currentTarget;
+  colCards.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  // Only remove if leaving the col-cards itself, not a child
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const colCards = e.currentTarget;
+  colCards.classList.remove('drag-over');
+
+  const colEl = colCards.closest('.col');
+  const newCol = colEl.dataset.col;
+
+  if (!draggedId || !newCol) return;
+
+  const oldCol = boardState[draggedId] || DEFAULT_COL;
+
+  // No column change — bail early (handles reorder within same column)
+  if (oldCol === newCol) return;
+
+  // Capture id before we null draggedId
+  const movedId    = draggedId;
+  const entersDone = newCol === 'done' && oldCol !== 'done';
+
+  // Optimistic update — render immediately, PATCH Notion in background
+  boardState[movedId] = newCol;
+  render();          // DOM is rebuilt here; query the card AFTER this line
+  draggedId = null;
+
+  patchStatus(movedId, newCol); // fire-and-forget
+
+  if (entersDone) {
+    const cardEl = document.querySelector(`.kanban-card[data-id="${movedId}"]`);
+    if (cardEl) triggerDoneEffects(cardEl);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Done celebration
+// ─────────────────────────────────────────────────────────────
+
+function triggerDoneEffects(cardEl) {
+  // 1 · Glow pulse — add class, self-remove when animation ends
+  cardEl.classList.add('card-done-pulse');
+  cardEl.addEventListener('animationend', () => {
+    cardEl.classList.remove('card-done-pulse');
+  }, { once: true });
+
+  // 2 · Confetti burst from card centre
+  fireConfetti(cardEl);
+}
+
+function fireConfetti(cardEl) {
+  const rect   = cardEl.getBoundingClientRect();
+  const cx     = rect.left + rect.width  / 2;
+  const cy     = rect.top  + rect.height / 2;
+
+  // Accent palette — one particle per color
+  const particles = [
+    { color: '#4f8ef7', shape: 'square'  },  // blue
+    { color: '#a78bfa', shape: 'circle'  },  // purple
+    { color: '#34d399', shape: 'square'  },  // green
+    { color: '#f59e0b', shape: 'rect'    },  // yellow
+    { color: '#f87171', shape: 'circle'  },  // red
+  ];
+
+  particles.forEach((p, i) => {
+    const el = document.createElement('div');
+
+    // Shape: square 7px, circle 7px, rect 10×5px
+    const w  = p.shape === 'rect' ? 10 : 7;
+    const h  = p.shape === 'rect' ?  5 : 7;
+    const br = p.shape === 'circle' ? '50%' : '2px';
+
+    el.style.cssText = [
+      'position:fixed',
+      `left:${cx}px`,
+      `top:${cy}px`,
+      `width:${w}px`,
+      `height:${h}px`,
+      `background:${p.color}`,
+      `border-radius:${br}`,
+      'pointer-events:none',
+      'z-index:9999',
+      'opacity:1',
+      // Start centred on card; transition handles the movement
+      'transform:translate(-50%,-50%) rotate(0deg)',
+      'transition:transform 780ms cubic-bezier(0.2,0.8,0.4,1), opacity 780ms ease-out',
+    ].join(';');
+
+    document.body.appendChild(el);
+
+    // Spread particles in a ~160° upward fan with slight jitter
+    // angle=0 → right; -PI/2 → straight up
+    const spread    = Math.PI * 0.9;                          // ±81° from top
+    const baseAngle = -Math.PI / 2;                           // pointing up
+    const angle     = baseAngle
+                    + (i / (particles.length - 1) - 0.5) * spread * 2
+                    + (Math.random() - 0.5) * 0.25;           // ±7° jitter
+
+    const dist = 38 + Math.random() * 28;                    // 38–66 px
+    const dx   = Math.cos(angle) * dist;
+    const dy   = Math.sin(angle) * dist;
+    const rot  = (Math.random() - 0.5) * 200;                // ±100° spin
+
+    // Double-rAF: first frame attaches element, second fires transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot}deg)`;
+        el.style.opacity   = '0';
+      });
+    });
+
+    // Remove from DOM after animation completes
+    setTimeout(() => el.remove(), 820);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Reset
+// ─────────────────────────────────────────────────────────────
+async function resetBoard() {
+  if (!confirm('Reset all cards to "To Build"? This will update Notion.')) return;
+  CARDS.forEach(c => { boardState[c.id] = DEFAULT_COL; });
+  render();
+  await Promise.all(CARDS.map(c => patchStatus(c.id, DEFAULT_COL)));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Init — load from Notion, fall back to default column on error
+// ─────────────────────────────────────────────────────────────
+async function initBoard() {
+  const loadingEl = document.getElementById('board-loading');
+  if (loadingEl) loadingEl.style.display = 'flex';
+
+  try {
+    const rows = await fetchRoadmap();
+    rows.forEach(row => {
+      const cardId = NAME_TO_ID[row.name];
+      if (cardId) {
+        boardState[cardId] = row.col;
+        notionIds[cardId]  = row.id;
+      }
+    });
+    // Any card not found in Notion defaults to to-build
+    CARDS.forEach(c => { if (!boardState[c.id]) boardState[c.id] = DEFAULT_COL; });
+  } catch (err) {
+    console.error('[roadmap] initial load failed — rendering defaults:', err);
+    CARDS.forEach(c => { boardState[c.id] = DEFAULT_COL; });
+  }
+
+  if (loadingEl) loadingEl.style.display = 'none';
+  render();
+}
+
+initBoard();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     IDEA-SWAP WIDGET
+════════════════════════════════════════════════════════════ -->
+<section class="idea-widget" id="idea-widget">
+  <div class="idea-inner">
+    <div class="idea-header">
+      <span class="idea-icon">💡</span>
+      <div>
+        <h2 class="idea-title">Got an automation idea?</h2>
+        <p class="idea-sub">Submit it — it'll get pulled into my next roadmap review.</p>
+      </div>
+    </div>
+
+    <!-- Form state -->
+    <form class="idea-form" id="idea-form" novalidate>
+      <div class="idea-fields">
+
+        <div class="idea-field">
+          <label for="idea-what">What should be automated? <span class="req">*</span></label>
+          <input id="idea-what" name="what" type="text"
+                 placeholder="e.g. Weekly tender scan and digest email"
+                 autocomplete="off" required>
+          <span class="field-err" id="err-what">Please describe what to automate.</span>
+        </div>
+
+        <div class="idea-field">
+          <label for="idea-hours">Hours saved per week (estimate)</label>
+          <input id="idea-hours" name="hours" type="text"
+                 placeholder="e.g. 3–4 hrs">
+        </div>
+
+        <div class="idea-field idea-field--wide">
+          <label for="idea-how">How does this work today? <span class="hint">(optional)</span></label>
+          <textarea id="idea-how" name="how" rows="3"
+                    placeholder="Describe the manual steps — the more specific, the better."></textarea>
+        </div>
+
+        <div class="idea-field">
+          <label for="idea-name">Your name <span class="hint">(optional)</span></label>
+          <input id="idea-name" name="name" type="text" placeholder="Anonymous">
+        </div>
+
+      </div><!-- /.idea-fields -->
+
+      <div class="idea-actions">
+        <button type="submit" class="idea-btn" id="idea-submit">
+          <span class="btn-label">Submit idea</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Success state (hidden until submit) -->
+    <div class="idea-success" id="idea-success" hidden>
+      <div class="success-icon">✓</div>
+      <p class="success-msg">Idea added to <strong>Suggested</strong> — I'll review it in the next advisor run.</p>
+      <button class="idea-btn idea-btn--ghost" id="idea-again">Submit another</button>
+    </div>
+
+  </div><!-- /.idea-inner -->
+</section>
+
+<style>
+/* ── Idea widget layout ── */
+.idea-widget {
+  max-width: 860px;
+  margin: 48px auto 64px;
+  padding: 0 24px;
+}
+.idea-inner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle top-edge accent line */
+.idea-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+  border-radius: 14px 14px 0 0;
+}
+.idea-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.idea-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.idea-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.idea-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Fields grid ── */
+.idea-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 24px;
+  margin-bottom: 24px;
+}
+.idea-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.idea-field--wide {
+  grid-column: 1 / -1;
+}
+.idea-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.req { color: var(--danger); }
+.hint { color: var(--dim); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.idea-field input,
+.idea-field textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  outline: none;
+  resize: vertical;
+}
+.idea-field input::placeholder,
+.idea-field textarea::placeholder { color: var(--dim); }
+.idea-field input:focus,
+.idea-field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+}
+.idea-field input.invalid,
+.idea-field textarea.invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
+}
+.field-err {
+  font-size: 12px;
+  color: var(--danger);
+  display: none;
+}
+.field-err.visible { display: block; }
+
+/* ── Button ── */
+.idea-actions { display: flex; align-items: center; }
+.idea-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.18s, transform 0.1s, opacity 0.18s;
+}
+.idea-btn:hover { background: #3d7de0; }
+.idea-btn:active { transform: scale(0.97); }
+.idea-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.idea-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  margin-top: 12px;
+}
+.idea-btn--ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+
+/* Spinner */
+.btn-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.idea-btn.loading .btn-label { opacity: 0.6; }
+.idea-btn.loading .btn-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Success state ── */
+.idea-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 0 8px;
+  animation: successFadeIn 0.4s ease-out;
+}
+@keyframes successFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.success-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(52, 211, 153, 0.12);
+  border: 2px solid var(--accent3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--accent3);
+  margin-bottom: 16px;
+  animation: successPop 0.45s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes successPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.success-msg {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 360px;
+}
+.success-msg strong { color: var(--accent3); }
+
+/* ── Responsive ── */
+@media (max-width: 560px) {
+  .idea-fields { grid-template-columns: 1fr; }
+  .idea-inner  { padding: 24px 20px; }
+}
+</style>
+
+<script>
+/* ── Idea Widget JS ── */
+(function () {
+  const form    = document.getElementById('idea-form');
+  const success = document.getElementById('idea-success');
+  const btn     = document.getElementById('idea-submit');
+  const again   = document.getElementById('idea-again');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    // Validate required field
+    const whatInput = document.getElementById('idea-what');
+    const errWhat   = document.getElementById('err-what');
+    if (!whatInput.value.trim()) {
+      whatInput.classList.add('invalid');
+      errWhat.classList.add('visible');
+      whatInput.focus();
+      return;
+    }
+    whatInput.classList.remove('invalid');
+    errWhat.classList.remove('visible');
+
+    // Loading state
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    const payload = {
+      what:  whatInput.value.trim(),
+      hours: document.getElementById('idea-hours').value.trim(),
+      how:   document.getElementById('idea-how').value.trim(),
+      name:  document.getElementById('idea-name').value.trim(),
+    };
+
+    try {
+      const res = await fetch('/api/submit', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      // Graceful degradation — show success anyway for local/offline use
+      console.warn('Submit error:', err);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+
+    // Show success
+    form.hidden = true;
+    success.hidden = false;
+  });
+
+  again.addEventListener('click', function () {
+    form.reset();
+    form.hidden   = false;
+    success.hidden = true;
+  });
+
+  // Clear invalid state on input
+  document.getElementById('idea-what').addEventListener('input', function () {
+    this.classList.remove('invalid');
+    document.getElementById('err-what').classList.remove('visible');
+  });
+}());
+</script>
+</body>
+</html>

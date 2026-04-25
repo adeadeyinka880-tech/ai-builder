@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Audit — Omo Fabs</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b25;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --warn: #f59e0b;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --dim: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0d1b35 0%, #0d0f14 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 40px;
+  }
+  .header-inner { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+  .header h1 span { color: var(--accent); }
+  .header .goal-pill {
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 8px;
+    padding: 12px 18px;
+    max-width: 420px;
+  }
+  .header .goal-pill .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+  .header .goal-pill p { color: var(--text); font-size: 14px; }
+  .date-badge { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  /* Section titles */
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+  }
+  h2 .icon { font-size: 1.2rem; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+
+  /* Cards grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .card .card-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .card .card-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* Bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { width: 200px; font-size: 13px; color: var(--text); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.domain { width: 240px; font-family: monospace; font-size: 12px; color: var(--muted); }
+  .bar-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .bar-count { width: 50px; text-align: right; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  .bar-pct { width: 42px; text-align: right; font-size: 12px; color: var(--dim); flex-shrink: 0; }
+
+  /* Color palette for categories */
+  .c-cert    { background: #4f8ef7; }
+  .c-procure { background: #a78bfa; }
+  .c-biz     { background: #34d399; }
+  .c-ai      { background: #f59e0b; }
+  .c-jobs    { background: #fb7185; }
+  .c-comms   { background: #67e8f9; }
+  .c-other   { background: #4a5568; }
+
+  /* Domain table */
+  .domain-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .domain-table th { text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .domain-table td { padding: 8px 12px; border-bottom: 1px solid rgba(42,51,71,0.5); }
+  .domain-table tr:last-child td { border-bottom: none; }
+  .domain-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-cert    { background: rgba(79,142,247,0.15); color: #7eb5fa; }
+  .tag-procure { background: rgba(167,139,250,0.15); color: #c4b5fd; }
+  .tag-biz     { background: rgba(52,211,153,0.15); color: #6ee7b7; }
+  .tag-ai      { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .tag-jobs    { background: rgba(251,113,133,0.15); color: #fda4af; }
+  .tag-other   { background: rgba(74,85,104,0.3); color: var(--muted); }
+
+  /* Diagnostic cards */
+  .diag-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .diag-card .diag-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .diag-card .diag-value { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+  .diag-card .diag-detail { font-size: 13px; color: var(--muted); }
+  .diag-card .diag-bar { margin-top: 12px; display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+
+  /* Observations */
+  .obs {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .obs.warn { border-left-color: var(--warn); }
+  .obs.good { border-left-color: var(--accent3); }
+  .obs strong { color: var(--text); }
+
+  /* Goal alignment */
+  .goal-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .goal-row .goal-name { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+  .goal-row .goal-meter { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .goal-row .meter-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .goal-row .meter-fill { height: 100%; border-radius: 4px; }
+  .goal-row .meter-pct { font-size: 13px; font-weight: 600; width: 36px; }
+  .goal-row .goal-note { font-size: 13px; color: var(--muted); }
+
+  /* Automation cards */
+  .auto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auto-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .auto-card.p1::before { background: linear-gradient(90deg, #4f8ef7, #a78bfa); }
+  .auto-card.p2::before { background: linear-gradient(90deg, #a78bfa, #34d399); }
+  .auto-card.p3::before { background: linear-gradient(90deg, #34d399, #f59e0b); }
+  .auto-card.p4::before { background: linear-gradient(90deg, #f59e0b, #fb7185); }
+  .auto-card.p5::before { background: linear-gradient(90deg, #fb7185, #67e8f9); }
+  .auto-card .auto-outcome { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .auto-card .auto-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .auto-card .auto-block .auto-block-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .auto-card .auto-block p { font-size: 13px; color: var(--muted); }
+  .auto-card .auto-footer { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .effort-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .effort-quick { background: rgba(52,211,153,0.15); color: #6ee7b7; }
+  .effort-medium { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .effort-big { background: rgba(167,139,250,0.15); color: #c4b5fd; }
+  .hours-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(79,142,247,0.15); color: #7eb5fa; }
+  .rank-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--surface2); color: var(--dim); }
+  .draft-badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(74,85,104,0.4); color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Data sources */
+  .source-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .source-row:last-child { border-bottom: none; }
+  .source-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .dot-green { background: var(--accent3); }
+  .dot-red { background: var(--danger); }
+  .dot-yellow { background: var(--warn); }
+  .source-name { font-weight: 600; font-size: 14px; }
+  .source-detail { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* Calendar section */
+  .cal-empty {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Footer */
+  footer {
+    padding: 24px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Daily activity heatmap */
+  .heatmap { display: flex; gap: 6px; flex-wrap: wrap; }
+  .heatmap-day {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    min-width: 130px;
+    flex: 1;
+  }
+  .heatmap-day .hd-date { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .heatmap-day .hd-visits { font-weight: 700; font-size: 1.1rem; }
+  .heatmap-day .hd-domains { font-size: 11px; color: var(--dim); }
+  .heat-0 { border-left: 3px solid #2a3347; }
+  .heat-1 { border-left: 3px solid #1e3a5f; }
+  .heat-2 { border-left: 3px solid #1e5a9f; }
+  .heat-3 { border-left: 3px solid #2d7de8; }
+  .heat-4 { border-left: 3px solid #4f8ef7; }
+  .heat-5 { border-left: 3px solid #fb7185; }
+
+  .note-box {
+    background: rgba(79,142,247,0.06);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ HEADER ═══════════════════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">AI Builder Automation Portfolio · Level 2</div>
+        <h1>Time Audit — <span>Omo Fabs</span></h1>
+        <div class="date-badge">April 21, 2026 &nbsp;·&nbsp; Edmonton / Sherwood Park, AB &nbsp;·&nbsp; 14-weekday window</div>
+      </div>
+      <div class="goal-pill">
+        <div class="label">#1 Goal (inferred)</div>
+        <p>Land PrairieFly DroneSec's first government drone security contracts, and build working AI automations for all 6 verticals — law firm, healthcare, accounting, insurance, municipalities, and real estate.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════ STAT SUMMARY ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">📊</span> At a Glance</h2>
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-label">Work-Hours Visits</div>
+        <div class="card-value" style="color:var(--accent);">460</div>
+        <div class="card-sub">Mon–Fri, 8am–6:30pm<br>Apr 1 – Apr 21, 2026</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Active Weekdays</div>
+        <div class="card-value" style="color:var(--accent2);">11 / 14</div>
+        <div class="card-sub">3 days with &lt;5 work-hour visits (off or on-site)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Avg Domains/Day</div>
+        <div class="card-value" style="color:var(--accent3);">8.4</div>
+        <div class="card-sub">Worst day: Apr 21 — 40 unique domains</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Calendar Meetings</div>
+        <div class="card-value" style="color:var(--warn);">0</div>
+        <div class="card-sub">1 test event created Apr 20 — no recurring meetings found</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ BROWSER TIME ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🌐</span> How I Actually Spend My Time — Browser</h2>
+
+    <div class="grid-2" style="gap:32px;">
+      <!-- Category breakdown -->
+      <div>
+        <h3>Browser Time by Category</h3>
+        <div class="bar-chart" style="margin-top:16px;">
+          <div class="bar-row">
+            <div class="bar-label">Certifications</div>
+            <div class="bar-track"><div class="bar-fill c-cert" style="width:100%;"></div></div>
+            <div class="bar-count">154</div>
+            <div class="bar-pct">33.5%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Gov Procurement</div>
+            <div class="bar-track"><div class="bar-fill c-procure" style="width:78.6%;"></div></div>
+            <div class="bar-count">121</div>
+            <div class="bar-pct">26.3%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Other</div>
+            <div class="bar-track"><div class="bar-fill c-other" style="width:34.4%;"></div></div>
+            <div class="bar-count">53</div>
+            <div class="bar-pct">11.5%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Work / Business</div>
+            <div class="bar-track"><div class="bar-fill c-biz" style="width:29.2%;"></div></div>
+            <div class="bar-count">45</div>
+            <div class="bar-pct">9.8%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">AI Tools</div>
+            <div class="bar-track"><div class="bar-fill c-ai" style="width:27.3%;"></div></div>
+            <div class="bar-count">42</div>
+            <div class="bar-pct">9.1%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Job Search / LinkedIn</div>
+            <div class="bar-track"><div class="bar-fill c-jobs" style="width:26.6%;"></div></div>
+            <div class="bar-count">41</div>
+            <div class="bar-pct">8.9%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Google / Comms</div>
+            <div class="bar-track"><div class="bar-fill c-comms" style="width:2.6%;"></div></div>
+            <div class="bar-count">4</div>
+            <div class="bar-pct">0.9%</div>
+          </div>
+        </div>
+        <div class="note-box" style="margin-top:20px;">
+          <strong style="color:var(--text);">What this doesn't capture:</strong> Email (Gmail not connected), Slack (not connected), Windows app usage (Timeline not enabled). These likely hold additional communication and context-switching data.
+        </div>
+      </div>
+
+      <!-- Top domains table -->
+      <div>
+        <h3>Top 20 Domains (Work Hours)</h3>
+        <table class="domain-table" style="margin-top:12px;">
+          <thead>
+            <tr><th>#</th><th>Domain</th><th>Visits</th><th>Category</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>my.isc2.org</td><td>44</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>2</td><td>isc2.org</td><td>42</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>3</td><td>linkedin.com</td><td>41</td><td><span class="tag tag-jobs">Jobs/Net</span></td></tr>
+            <tr><td>4</td><td>canadabuys.canada.ca</td><td>27</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>5</td><td>sasktenders.ca</td><td>26</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>6</td><td>jobright.ai</td><td>24</td><td><span class="tag tag-ai">AI Tools</span></td></tr>
+            <tr><td>7</td><td>rohde-schwarz.com</td><td>24</td><td><span class="tag tag-biz">Business</span></td></tr>
+            <tr><td>8</td><td>medbuy.bonfirehub.ca</td><td>20</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>9</td><td>store.isaca.org</td><td>15</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>10</td><td>theiia.org</td><td>15</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>11</td><td>login.isaca.org</td><td>13</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>12</td><td>bcbid.gov.bc.ca</td><td>11</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>13</td><td>google.com</td><td>9</td><td><span class="tag tag-other">Other</span></td></tr>
+            <tr><td>14</td><td>signin.theiia.org</td><td>9</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>15</td><td>isaca.org</td><td>8</td><td><span class="tag tag-cert">Certs</span></td></tr>
+            <tr><td>16</td><td>prairieflydronesec.com</td><td>7</td><td><span class="tag tag-biz">Business</span></td></tr>
+            <tr><td>17</td><td>joinleland.com</td><td>7</td><td><span class="tag tag-ai">AI Tools</span></td></tr>
+            <tr><td>18</td><td>ontario.ca</td><td>7</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>19</td><td>merx.com</td><td>5</td><td><span class="tag tag-procure">Procurement</span></td></tr>
+            <tr><td>20</td><td>electrorent.com</td><td>5</td><td><span class="tag tag-biz">Business</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Daily heatmap -->
+    <div style="margin-top:32px;">
+      <h3>Daily Browser Activity (Work Hours)</h3>
+      <div class="heatmap" style="margin-top:12px;">
+        <div class="heatmap-day heat-1"><div class="hd-date">Apr 1 · Wed</div><div class="hd-visits">9</div><div class="hd-domains">4 domains</div></div>
+        <div class="heatmap-day heat-0"><div class="hd-date">Apr 2 · Thu</div><div class="hd-visits">6</div><div class="hd-domains">1 domain</div></div>
+        <div class="heatmap-day heat-0"><div class="hd-date">Apr 3 · Fri</div><div class="hd-visits">8</div><div class="hd-domains">1 domain</div></div>
+        <div class="heatmap-day heat-0"><div class="hd-date">Apr 7 · Tue</div><div class="hd-visits">5</div><div class="hd-domains">1 domain</div></div>
+        <div class="heatmap-day heat-0"><div class="hd-date">Apr 8 · Wed</div><div class="hd-visits">6</div><div class="hd-domains">1 domain</div></div>
+        <div class="heatmap-day heat-2"><div class="hd-date">Apr 10 · Fri</div><div class="hd-visits">45</div><div class="hd-domains">6 domains</div></div>
+        <div class="heatmap-day heat-0"><div class="hd-date">Apr 13 · Mon</div><div class="hd-visits">7</div><div class="hd-domains">2 domains</div></div>
+        <div class="heatmap-day heat-4"><div class="hd-date">Apr 16 · Thu</div><div class="hd-visits">132</div><div class="hd-domains">22 domains</div></div>
+        <div class="heatmap-day heat-1"><div class="hd-date">Apr 17 · Fri</div><div class="hd-visits">9</div><div class="hd-domains">5 domains</div></div>
+        <div class="heatmap-day heat-2"><div class="hd-date">Apr 20 · Mon</div><div class="hd-visits">23</div><div class="hd-domains">9 domains</div></div>
+        <div class="heatmap-day heat-5"><div class="hd-date">Apr 21 · Tue ←today</div><div class="hd-visits" style="color:var(--danger);">210</div><div class="hd-domains">40 domains</div></div>
+      </div>
+      <div class="note-box" style="margin-top:12px;">Most early-April days show 1-domain sessions — likely focused cert study or off-computer. The Apr 16 and Apr 21 spikes align with heavy procurement research sessions (10+ tender portals visited in sequence).</div>
+    </div>
+
+    <!-- Certification breakdown -->
+    <div style="margin-top:32px;">
+      <h3>Certification Tracks Active</h3>
+      <div class="grid-3" style="margin-top:12px;">
+        <div class="card">
+          <div class="card-label">ISC2 (CISSP / CCSP)</div>
+          <div class="card-value" style="color:var(--accent);font-size:1.5rem;">86 visits</div>
+          <div class="card-sub">my.isc2.org + isc2.org<br>Most active cert track</div>
+        </div>
+        <div class="card">
+          <div class="card-label">ISACA (CISA / CISM)</div>
+          <div class="card-value" style="color:var(--accent);font-size:1.5rem;">36 visits</div>
+          <div class="card-sub">isaca.org + store.isaca.org<br>+ login.isaca.org</div>
+        </div>
+        <div class="card">
+          <div class="card-label">IIA (CIA)</div>
+          <div class="card-value" style="color:var(--accent);font-size:1.5rem;">32 visits</div>
+          <div class="card-sub">theiia.org + myiia.theiia.org<br>+ signin + resetpassword</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Procurement portals -->
+    <div style="margin-top:32px;">
+      <h3>Government Procurement Portals Visited</h3>
+      <div class="grid-2" style="margin-top:12px;">
+        <div class="card">
+          <div class="card-label">Federal</div>
+          <div style="font-size:13px;color:var(--muted);line-height:2;">
+            canadabuys.canada.ca (27) · merx.com (5) · canada.newark.com (4)
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Provincial (AB, SK, BC, ON, MB, NL)</div>
+          <div style="font-size:13px;color:var(--muted);line-height:2;">
+            sasktenders.ca (26) · bcbid.gov.bc.ca (11) · ontario.ca (7)<br>
+            purchasing.alberta.ca (5) · gov.mb.ca (5) · manitoba.ca (5) · gov.nl.ca (4)
+          </div>
+        </div>
+      </div>
+      <div class="note-box" style="margin-top:12px;">10 portals visited manually. This is the highest-ROI automation target — see Automation Opportunities below.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ MEETINGS ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">📅</span> Calendar & Meetings</h2>
+    <div class="cal-empty">
+      <div style="font-size:2rem;margin-bottom:8px;">⚪</div>
+      <strong style="color:var(--text);">No meetings found in Google Calendar (Apr 1–21, 2026)</strong><br>
+      <span style="margin-top:6px;display:block;">1 test event created Apr 20 ("Test interview" — self-created, 1 external attendee, unconfirmed).<br>
+      This means either: meetings happen in a separate calendar not connected, or the business operates without scheduled calls, or calls happen ad hoc.</span>
+    </div>
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-label">Total Meeting Hours</div>
+        <div class="card-value" style="color:var(--dim);">~0h</div>
+        <div class="card-sub">Near-zero scheduled meeting load</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Deep Work Potential</div>
+        <div class="card-value" style="color:var(--accent3);">High</div>
+        <div class="card-sub">No meetings = calendar is entirely unblocked for deep work</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Meeting / Deep Work Ratio</div>
+        <div class="card-value" style="color:var(--accent3);">0 : 100</div>
+        <div class="card-sub">Ideal ratio — if deep work is actually happening</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ DIAGNOSTICS ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🔬</span> Key Diagnostics</h2>
+
+    <div class="grid-2" style="gap:16px;margin-bottom:24px;">
+      <div class="diag-card">
+        <div class="diag-title">Context Switching Rate</div>
+        <div class="diag-value" style="color:var(--warn);">8.4 <span style="font-size:1rem;font-weight:400;color:var(--muted);">domains/day avg</span></div>
+        <div class="diag-detail">Worst day: <strong style="color:var(--danger);">Apr 21 — 40 domains, 210 visits</strong> (exam prep + LinkedIn + procurement all same session)</div>
+        <div class="diag-detail" style="margin-top:6px;">Most days: 1–5 domains (focused), with 2 spike days of intense multi-tabbing</div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-title">Reactive vs. Proactive Time Split</div>
+        <div class="diag-value" style="color:var(--accent3);">~80% <span style="font-size:1rem;font-weight:400;color:var(--muted);">proactive</span></div>
+        <div class="diag-detail">Certification study and procurement research are both self-directed. No email/Slack data so reactive time from messages isn't captured.</div>
+        <div class="diag-detail" style="margin-top:6px;">Best-case read: strong autonomous execution. Risk: communication blind spot.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:16px;">Top 3 Time Drains</h3>
+    <div class="obs warn">
+      <strong>1. Manual procurement scanning across 10 government portals.</strong> Visiting canadabuys.ca, sasktenders.ca, medbuy.bonfirehub.ca, bcbid.gov.bc.ca, ontario.ca, merx.com, purchasing.alberta.ca, gov.mb.ca, gov.nl.ca, and more individually — 121 visits, all repetitive navigation. Zero leverage. Every dollar of contract opportunity found this way is found by every other bidder too.
+    </div>
+    <div class="obs warn">
+      <strong>2. Three parallel certification tracks with no clear sequencing.</strong> ISC2 + ISACA + IIA simultaneously = 154 visits, likely spread across CISSP, CISA/CISM, and CIA all at once. Parallel prep dilutes pass probability. One cert finished = one credential earned. Three in progress = zero new credentials.
+    </div>
+    <div class="obs warn">
+      <strong>3. LinkedIn visits categorized with jobright.ai — job-search posture, not BD posture.</strong> 41 visits to LinkedIn + 24 to jobright.ai (a jobs platform). At this stage, LinkedIn should be for procurement officer outreach and drone security thought leadership — not job hunting. The tool usage pattern suggests time invested in the wrong direction.
+    </div>
+
+    <div style="margin-top:24px;">
+      <h3 style="margin-bottom:12px;">Sharp Observations</h3>
+      <div class="obs good">
+        <strong>What's working:</strong> You're already doing the right research. Procurement portals + certifications IS the path to government contracts for a drone security firm. The strategy is sound — the execution is manual and fragmented.
+      </div>
+      <div class="obs">
+        <strong>The rohde-schwarz.com signal (24 visits):</strong> Rohde &amp; Schwarz makes RF/spectrum analysis and counter-drone detection equipment. 24 visits suggests active equipment research — potentially for client demonstrations, procurement specs, or proposal writing. This is strong signal of active BD.
+      </div>
+      <div class="obs">
+        <strong>prairieflydronesec.com only 7 visits:</strong> If this is your own site, 7 visits in 14 weekdays suggests you're not regularly updating or monitoring it. A drone security firm's website is a BD asset — it should be getting worked on, not just visited.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ GOAL ALIGNMENT ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🎯</span> Goal Alignment</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Note: No CLAUDE.md found — goals inferred from browser behavior and Drive files. Percentages are browser-time proxies, not clock hours.</p>
+
+    <div class="goal-row">
+      <div class="goal-name">Goal 1: Credential Prairie Fly Drone Security (ISC2 / ISACA / IIA)</div>
+      <div class="goal-meter">
+        <div class="meter-track"><div class="meter-fill" style="width:33.5%;background:var(--accent);"></div></div>
+        <div class="meter-pct" style="color:var(--accent);">33.5%</div>
+      </div>
+      <div class="goal-note">Strong signal — largest single category. Risk: spread thin across 3 tracks. Focus on one completion first.</div>
+    </div>
+
+    <div class="goal-row">
+      <div class="goal-name">Goal 2: Win Government Procurement Contracts</div>
+      <div class="goal-meter">
+        <div class="meter-track"><div class="meter-fill" style="width:26.3%;background:var(--accent2);"></div></div>
+        <div class="meter-pct" style="color:var(--accent2);">26.3%</div>
+      </div>
+      <div class="goal-note">Active pipeline research happening — but 100% manual. No evidence of proposals drafted (Drive has no RFP files). Research without proposal output is not converting.</div>
+    </div>
+
+    <div class="goal-row">
+      <div class="goal-name">Goal 3: Build/automate AI systems for the business</div>
+      <div class="goal-meter">
+        <div class="meter-track"><div class="meter-fill" style="width:9.1%;background:var(--warn);"></div></div>
+        <div class="meter-pct" style="color:var(--warn);">9.1%</div>
+      </div>
+      <div class="goal-note">joinleland.com (7 visits) + jobright.ai (24 visits) in AI category. Real AI builder work — building tools, automations, Claude projects — is not visible in browser history. Either happening in apps not captured, or underinvested.</div>
+    </div>
+
+    <div class="goal-row">
+      <div class="goal-name">Goal 4: Grow Prairie Fly Drone Security brand / clientele</div>
+      <div class="goal-meter">
+        <div class="meter-track"><div class="meter-fill" style="width:9.8%;background:var(--accent3);"></div></div>
+        <div class="meter-pct" style="color:var(--accent3);">9.8%</div>
+      </div>
+      <div class="goal-note">prairieflydronesec.com (7) + rohde-schwarz.com (24) + electrorent.com (5) + harborglobal.com (5). Equipment research strong; own website weak. Content creation, outreach, and partnerships are absent from the data.</div>
+    </div>
+
+    <div style="margin-top:24px; padding:20px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
+      <h3 style="margin-bottom:12px;">What Should Be Happening But Isn't Visible in the Data</h3>
+      <ul style="font-size:14px;color:var(--muted);line-height:2;padding-left:20px;">
+        <li><strong style="color:var(--text);">RFP drafting:</strong> 121 procurement visits but no Google Docs with proposal content. Research needs to produce output.</li>
+        <li><strong style="color:var(--text);">Email outreach to procurement officers:</strong> Gmail not connected — this may be happening but untracked.</li>
+        <li><strong style="color:var(--text);">LinkedIn as BD tool:</strong> Almost certainly visiting for job search vs. outreach to decision-makers.</li>
+        <li><strong style="color:var(--text);">Certification progress tracking:</strong> No evidence of a study schedule or progress tracker.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ AUTOMATION ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">⚡</span> Automation Opportunities</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Ranked by: hours reclaimed × alignment to government contracting goal. All estimates are drafts.</p>
+
+    <!-- #1 -->
+    <div class="auto-card p1">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="rank-badge">#1 Highest Impact</div>
+        <div class="draft-badge">Draft</div>
+      </div>
+      <div class="auto-outcome">Relevant drone/security government tenders appear in your inbox every morning without you touching a single portal.</div>
+      <div class="auto-row">
+        <div class="auto-block">
+          <div class="auto-block-label">What's Happening Today</div>
+          <p>Manually visiting 10+ government procurement portals (canadabuys.ca, sasktenders.ca, bcbid.gov.bc.ca, merx.com, and 6 more) to scan for drone, security, or counter-UAS tenders — consuming 120+ browser visits over 14 days, with no guarantee of coverage.</p>
+        </div>
+        <div class="auto-block">
+          <div class="auto-block-label">Automated Version</div>
+          <p>Scheduled agent runs nightly, scrapes/monitors each portal's search results for keywords (drone, UAS, counter-drone, security services, RF detection), deduplicates, and sends a formatted digest email each morning with title, closing date, value, and fit score.</p>
+        </div>
+      </div>
+      <div class="auto-footer">
+        <span class="effort-badge effort-medium">Medium Lift · half day</span>
+        <span class="hours-badge">~4–6 hrs/week reclaimed</span>
+        <span style="font-size:12px;color:var(--muted);">Tools: Claude API + Python scraper + Gmail or n8n</span>
+      </div>
+    </div>
+
+    <!-- #2 -->
+    <div class="auto-card p2">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="rank-badge">#2</div>
+        <div class="draft-badge">Draft</div>
+      </div>
+      <div class="auto-outcome">A first-draft RFP response is ready within 30 minutes of finding a relevant tender — you edit, not write from scratch.</div>
+      <div class="auto-row">
+        <div class="auto-block">
+          <div class="auto-block-label">What's Happening Today</div>
+          <p>Reading procurement postings manually with no structured output. No RFP drafts found in Drive. The research-to-proposal gap means promising tenders are being read but not bid on.</p>
+        </div>
+        <div class="auto-block">
+          <div class="auto-block-label">Automated Version</div>
+          <p>Paste tender URL or PDF → Claude reads the scope, requirements, and evaluation criteria → generates a structured first draft response using Prairie Fly's credentials, capabilities, and past project templates as context. Human reviews and finalizes.</p>
+        </div>
+      </div>
+      <div class="auto-footer">
+        <span class="effort-badge effort-medium">Medium Lift · half day</span>
+        <span class="hours-badge">~3–5 hrs/tender saved</span>
+        <span style="font-size:12px;color:var(--muted);">Tools: Claude API with file context + Google Docs output</span>
+      </div>
+    </div>
+
+    <!-- #3 -->
+    <div class="auto-card p3">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="rank-badge">#3</div>
+        <div class="draft-badge">Draft</div>
+      </div>
+      <div class="auto-outcome">Certification study is sequenced, tracked, and AI-tutored daily — one cert finishes before the next starts.</div>
+      <div class="auto-row">
+        <div class="auto-block">
+          <div class="auto-block-label">What's Happening Today</div>
+          <p>Simultaneously visiting ISC2, ISACA, and IIA portals (154 combined visits across 3 different orgs). No single cert is close to completion, and parallel study dilutes pass rate for all three.</p>
+        </div>
+        <div class="auto-block">
+          <div class="auto-block-label">Automated Version</div>
+          <p>Daily AI study session: Claude quizzes on current cert's domain, tracks weak areas, and adjusts next session. A Google Sheet tracks daily progress and projects exam-ready date. Sequence: ISC2 first (most relevant for drone security contracts), then ISACA.</p>
+        </div>
+      </div>
+      <div class="auto-footer">
+        <span class="effort-badge effort-quick">Quick Win · under 2 hrs</span>
+        <span class="hours-badge">~1–2 hrs/week more effective study</span>
+        <span style="font-size:12px;color:var(--muted);">Tools: Claude Projects + Google Sheets tracker</span>
+      </div>
+    </div>
+
+    <!-- #4 -->
+    <div class="auto-card p4">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="rank-badge">#4</div>
+        <div class="draft-badge">Draft</div>
+      </div>
+      <div class="auto-outcome">LinkedIn works as a BD channel — procurement officers, base security leads, and drone security buyers get outreach on a schedule without manual drafting.</div>
+      <div class="auto-row">
+        <div class="auto-block">
+          <div class="auto-block-label">What's Happening Today</div>
+          <p>41 LinkedIn visits co-categorized with jobright.ai, suggesting job-search browsing posture. LinkedIn as a BD tool for Prairie Fly requires outbound messaging to specific roles (base security officers, municipal procurement, RCMP contracting) — no evidence this is happening.</p>
+        </div>
+        <div class="auto-block">
+          <div class="auto-block-label">Automated Version</div>
+          <p>Claude drafts personalized connection + follow-up messages based on target's title, org, and recent posts. You review and send with one click. Weekly report on who responded. Outreach becomes systematic, not ad hoc.</p>
+        </div>
+      </div>
+      <div class="auto-footer">
+        <span class="effort-badge effort-medium">Medium Lift · half day</span>
+        <span class="hours-badge">~2–3 hrs/week reclaimed</span>
+        <span style="font-size:12px;color:var(--muted);">Tools: Claude API + LinkedIn (manual send) + Notion/Sheets CRM</span>
+      </div>
+    </div>
+
+    <!-- #5 -->
+    <div class="auto-card p5">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="rank-badge">#5</div>
+        <div class="draft-badge">Draft</div>
+      </div>
+      <div class="auto-outcome">Weekly drone security intelligence brief arrives automatically — you stay ahead of competitors and regulators without scanning the news.</div>
+      <div class="auto-row">
+        <div class="auto-block">
+          <div class="auto-block-label">What's Happening Today</div>
+          <p>Rohde-Schwarz equipment browsing (24 visits) and drone security portal checks (prairieflydronesec.com) suggest manual market monitoring. No structured intelligence gathering visible.</p>
+        </div>
+        <div class="auto-block">
+          <div class="auto-block-label">Automated Version</div>
+          <p>Agent monitors: drone incident news, Transport Canada / DND regulatory updates, competitor activity (new contracts awarded, certifications published), and new Rohde-Schwarz / equipment releases. Delivers a 1-page brief every Monday morning.</p>
+        </div>
+      </div>
+      <div class="auto-footer">
+        <span class="effort-badge effort-quick">Quick Win · under 2 hrs</span>
+        <span class="hours-badge">~2 hrs/week reclaimed</span>
+        <span style="font-size:12px;color:var(--muted);">Tools: Claude + web search + Gmail or Slack</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ DATA SOURCES ═══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🗄️</span> Data Sources</h2>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+      <div class="source-row">
+        <div class="source-dot dot-green"></div>
+        <div>
+          <div class="source-name">Chrome Browser History</div>
+          <div class="source-detail">Profile 1 · C:\Users\Administrator\AppData\Local\Google\Chrome\User Data\Profile 1\History · 653 total URLs · 924 visits in window · 460 filtered to work hours (Mon–Fri 8am–6:30pm) · Date range: Mar 28 – Apr 21, 2026</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <div class="source-dot dot-green"></div>
+        <div>
+          <div class="source-name">Google Calendar</div>
+          <div class="source-detail">adeadeyinka880@gmail.com · America/Edmonton · Apr 1–21, 2026 · 1 event found (test event, self-created Apr 20) · No recurring meetings</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <div class="source-dot dot-green"></div>
+        <div>
+          <div class="source-name">Google Drive</div>
+          <div class="source-detail">adeadeyinka880@gmail.com · Used for context only (file names, doc types) · Not a primary time source · Shows: drone security SOPs, architecture frameworks, Lean Canvas (Edmonton Unlimited), political resolutions (UCP Sherwood Park CA)</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <div class="source-dot dot-red"></div>
+        <div>
+          <div class="source-name">Windows App Usage (ActivitiesCache.db)</div>
+          <div class="source-detail">Not available — ConnectedDevicesPlatform directory exists but contains no .db files. Windows Timeline feature is disabled or not populated. To enable: Settings → Privacy → Activity History → turn on "Store my activity history"</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <div class="source-dot dot-red"></div>
+        <div>
+          <div class="source-name">Gmail / Email</div>
+          <div class="source-detail">Not connected — Google Drive MCP is connected but not Gmail. To add: claude.ai → Settings → Connectors → Google Mail (~2 min). This would unlock: sent/received patterns, top correspondents, email load analysis.</div>
+        </div>
+      </div>
+      <div class="source-row">
+        <div class="source-dot dot-red"></div>
+        <div>
+          <div class="source-name">Slack</div>
+          <div class="source-detail">Not connected — no Slack MCP in available tools. If you use Slack for business comms, add it at claude.ai → Settings → Connectors.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    Time Audit — April 21, 2026 &nbsp;|&nbsp; Part of my AI Builder Automation Portfolio
+  </div>
+</footer>
+
+</body>
+</html>

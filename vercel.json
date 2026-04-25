@@ -1,0 +1,6 @@
+{
+  "name": "ai-builder-dashboard",
+  "rewrites": [
+    { "source": "/", "destination": "/ai-builder-dashboard.html" }
+  ]
+}
