@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Graph — Grant Response Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+  :root {
+    --bg:      #0d0f14;
+    --surface: #161b25;
+    --surface2:#1e2535;
+    --border:  rgba(255,255,255,0.07);
+    --text:    #e8eaf0;
+    --muted:   #94a3b8;
+    --dim:     #5a6a82;
+    --accent:  #4f8ef7;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --warn:    #f59e0b;
+    --danger:  #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── Header ── */
+  .hdr {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .hdr-left { display: flex; align-items: baseline; gap: 12px; }
+  .hdr-eyebrow { font-size: 11px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.08em; }
+  .hdr-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .hdr-meta { font-size: 12px; color: var(--dim); }
+
+  /* ── Legend ── */
+  .legend {
+    position: absolute;
+    bottom: 20px; left: 20px;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .legend-title { font-size: 10px; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-note { font-size: 11px; color: var(--dim); margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    position: absolute;
+    z-index: 20;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 240px;
+    line-height: 1.5;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .tooltip-meta { color: var(--dim); font-size: 11px; }
+
+  /* ── Hint ── */
+  .hint {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    z-index: 10;
+    font-size: 11px;
+    color: var(--dim);
+    text-align: right;
+    line-height: 1.7;
+  }
+
+  svg { width: 100%; height: 100%; }
+  .link { stroke-opacity: 0.45; }
+  .link:hover { stroke-opacity: 0.9; }
+  .node { cursor: grab; }
+  .node:active { cursor: grabbing; }
+  .node circle { transition: filter 0.15s; }
+  .node:hover circle { filter: brightness(1.25); }
+  .node text { pointer-events: none; user-select: none; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <span class="hdr-eyebrow">Grant Response Generator</span>
+    <span class="hdr-title">Knowledge Graph</span>
+  </div>
+  <span class="hdr-meta" id="stats"></span>
+</div>
+
+<div class="legend">
+  <div class="legend-title">Node Types</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div>Wiki article</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b; box-shadow: 0 0 6px #f59e0b88"></div>Quality Rules (root)</div>
+  <div class="legend-note">Node size = total connections<br>Arrows = [[wikilink]] direction</div>
+</div>
+
+<div class="hint">Drag nodes · Scroll to zoom · Click to pin</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name" id="tt-name"></div>
+  <div id="tt-desc"></div>
+  <div class="tooltip-meta" id="tt-meta"></div>
+</div>
+
+<svg id="graph"></svg>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────────
+const nodeData = [
+  { id: "wiki-grant-types",          label: "Grant Types",          desc: "Government, foundation, and corporate funder archetypes — register, expectations, budget norms", type: "wiki" },
+  { id: "wiki-rfp-anatomy",          label: "RFP Anatomy",          desc: "How to read an RFP — extract sections, eligibility STOP check, word limits", type: "wiki" },
+  { id: "wiki-org-profile",          label: "Org Profile",          desc: "Required org profile fields, data currency rules, handling missing information", type: "wiki" },
+  { id: "wiki-narrative-sections",   label: "Narrative Sections",   desc: "Frameworks for all 5 narrative section types — what each must accomplish", type: "wiki" },
+  { id: "wiki-evidence-citation",    label: "Evidence & Citation",  desc: "3-tier evidence hierarchy, claim-to-source matching, citation format", type: "wiki" },
+  { id: "wiki-budget-conventions",   label: "Budget Conventions",   desc: "Line-item structure, budget narrative rules, reconciliation table", type: "wiki" },
+  { id: "wiki-alignment-methodology",label: "Alignment",            desc: "5-step scoring process, match report format — core of Sub-build 1", type: "wiki" },
+  { id: "wiki-vocab-switching",      label: "Vocab Switching",      desc: "Language register by funder type and org vertical, vocabulary matching rule", type: "wiki" },
+  { id: "wiki-quality-rules",        label: "Quality Rules",        desc: "7 hard rules, flag taxonomy, clarification triggers — root constraint layer", type: "root" },
+  { id: "wiki-output-formats",       label: "Output Formats",       desc: "Section assembly order, submission format by type, pre-submission checklist", type: "wiki" },
+];
+
+const linkData = [
+  // wiki-grant-types
+  { source: "wiki-grant-types", target: "wiki-rfp-anatomy" },
+  { source: "wiki-grant-types", target: "wiki-alignment-methodology" },
+  { source: "wiki-grant-types", target: "wiki-vocab-switching" },
+  { source: "wiki-grant-types", target: "wiki-quality-rules" },
+  // wiki-rfp-anatomy
+  { source: "wiki-rfp-anatomy", target: "wiki-grant-types" },
+  { source: "wiki-rfp-anatomy", target: "wiki-alignment-methodology" },
+  { source: "wiki-rfp-anatomy", target: "wiki-output-formats" },
+  { source: "wiki-rfp-anatomy", target: "wiki-quality-rules" },
+  // wiki-org-profile
+  { source: "wiki-org-profile", target: "wiki-alignment-methodology" },
+  { source: "wiki-org-profile", target: "wiki-budget-conventions" },
+  { source: "wiki-org-profile", target: "wiki-evidence-citation" },
+  { source: "wiki-org-profile", target: "wiki-quality-rules" },
+  // wiki-narrative-sections
+  { source: "wiki-narrative-sections", target: "wiki-alignment-methodology" },
+  { source: "wiki-narrative-sections", target: "wiki-evidence-citation" },
+  { source: "wiki-narrative-sections", target: "wiki-budget-conventions" },
+  { source: "wiki-narrative-sections", target: "wiki-output-formats" },
+  { source: "wiki-narrative-sections", target: "wiki-quality-rules" },
+  // wiki-evidence-citation
+  { source: "wiki-evidence-citation", target: "wiki-org-profile" },
+  { source: "wiki-evidence-citation", target: "wiki-narrative-sections" },
+  { source: "wiki-evidence-citation", target: "wiki-quality-rules" },
+  // wiki-budget-conventions
+  { source: "wiki-budget-conventions", target: "wiki-narrative-sections" },
+  { source: "wiki-budget-conventions", target: "wiki-org-profile" },
+  { source: "wiki-budget-conventions", target: "wiki-output-formats" },
+  { source: "wiki-budget-conventions", target: "wiki-quality-rules" },
+  // wiki-alignment-methodology
+  { source: "wiki-alignment-methodology", target: "wiki-grant-types" },
+  { source: "wiki-alignment-methodology", target: "wiki-rfp-anatomy" },
+  { source: "wiki-alignment-methodology", target: "wiki-org-profile" },
+  { source: "wiki-alignment-methodology", target: "wiki-narrative-sections" },
+  { source: "wiki-alignment-methodology", target: "wiki-quality-rules" },
+  // wiki-vocab-switching
+  { source: "wiki-vocab-switching", target: "wiki-grant-types" },
+  { source: "wiki-vocab-switching", target: "wiki-rfp-anatomy" },
+  { source: "wiki-vocab-switching", target: "wiki-quality-rules" },
+  // wiki-quality-rules → all others
+  { source: "wiki-quality-rules", target: "wiki-grant-types" },
+  { source: "wiki-quality-rules", target: "wiki-rfp-anatomy" },
+  { source: "wiki-quality-rules", target: "wiki-org-profile" },
+  { source: "wiki-quality-rules", target: "wiki-narrative-sections" },
+  { source: "wiki-quality-rules", target: "wiki-evidence-citation" },
+  { source: "wiki-quality-rules", target: "wiki-budget-conventions" },
+  { source: "wiki-quality-rules", target: "wiki-alignment-methodology" },
+  { source: "wiki-quality-rules", target: "wiki-vocab-switching" },
+  { source: "wiki-quality-rules", target: "wiki-output-formats" },
+  // wiki-output-formats
+  { source: "wiki-output-formats", target: "wiki-rfp-anatomy" },
+  { source: "wiki-output-formats", target: "wiki-narrative-sections" },
+  { source: "wiki-output-formats", target: "wiki-budget-conventions" },
+  { source: "wiki-output-formats", target: "wiki-quality-rules" },
+];
+
+// ── Degree calculation ────────────────────────────────────────────────────────
+const degreeMap = {};
+nodeData.forEach(n => degreeMap[n.id] = 0);
+linkData.forEach(l => {
+  degreeMap[l.source]++;
+  degreeMap[l.target]++;
+});
+nodeData.forEach(n => n.degree = degreeMap[n.id]);
+
+// ── Color map ─────────────────────────────────────────────────────────────────
+const colorMap = {
+  wiki:  "#4f8ef7",
+  root:  "#f59e0b",
+  index: "#a78bfa",
+  scope: "#34d399",
+  meta:  "#5a6a82",
+};
+
+const glowMap = {
+  root: "drop-shadow(0 0 8px #f59e0b99)",
+};
+
+// ── Node radius scale ─────────────────────────────────────────────────────────
+const minR = 10, maxR = 30;
+const degrees = nodeData.map(n => n.degree);
+const rScale = d3.scaleLinear()
+  .domain([d3.min(degrees), d3.max(degrees)])
+  .range([minR, maxR]);
+
+// ── SVG setup ────────────────────────────────────────────────────────────────
+const svg = d3.select("#graph");
+const W = window.innerWidth, H = window.innerHeight;
+
+// Arrow marker defs
+const defs = svg.append("defs");
+
+const markerTypes = ["wiki", "root", "index", "scope", "meta"];
+markerTypes.forEach(type => {
+  defs.append("marker")
+    .attr("id", `arrow-${type}`)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 10)
+    .attr("refY", 0)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("fill", colorMap[type])
+    .attr("opacity", 0.6);
+});
+
+// Container for zoom
+const g = svg.append("g").attr("class", "zoom-container");
+
+// Zoom behavior
+const zoom = d3.zoom()
+  .scaleExtent([0.2, 4])
+  .on("zoom", e => g.attr("transform", e.transform));
+
+svg.call(zoom);
+svg.call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2));
+
+// ── Force simulation ──────────────────────────────────────────────────────────
+const simulation = d3.forceSimulation(nodeData)
+  .force("link", d3.forceLink(linkData).id(d => d.id).distance(d => {
+    // longer distance for index (it links to everything)
+    if (d.source.id === "index" || d.target.id === "index") return 200;
+    return 120;
+  }).strength(0.4))
+  .force("charge", d3.forceManyBody().strength(-400))
+  .force("center", d3.forceCenter(0, 0))
+  .force("collide", d3.forceCollide().radius(d => rScale(d.degree) + 18));
+
+// ── Draw links ────────────────────────────────────────────────────────────────
+const link = g.append("g").attr("class", "links")
+  .selectAll("line")
+  .data(linkData)
+  .join("line")
+  .attr("class", "link")
+  .attr("stroke", d => {
+    const target = nodeData.find(n => n.id === (d.target.id || d.target));
+    return target ? colorMap[target.type] : "#4f8ef7";
+  })
+  .attr("stroke-width", 1.2)
+  .attr("marker-end", d => {
+    const target = nodeData.find(n => n.id === (d.target.id || d.target));
+    return target ? `url(#arrow-${target.type})` : "url(#arrow-wiki)";
+  });
+
+// ── Draw nodes ────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById("tooltip");
+const ttName  = document.getElementById("tt-name");
+const ttDesc  = document.getElementById("tt-desc");
+const ttMeta  = document.getElementById("tt-meta");
+
+const node = g.append("g").attr("class", "nodes")
+  .selectAll("g")
+  .data(nodeData)
+  .join("g")
+  .attr("class", "node")
+  .call(d3.drag()
+    .on("start", (e, d) => {
+      if (!e.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x; d.fy = d.y;
+    })
+    .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on("end", (e, d) => {
+      if (!e.active) simulation.alphaTarget(0);
+      // click to pin, drag to move (keep pinned on drag end)
+    })
+  )
+  .on("click", (e, d) => {
+    // Toggle pin
+    if (d.pinned) {
+      d.fx = null; d.fy = null; d.pinned = false;
+      d3.select(e.currentTarget).select("circle").attr("stroke-dasharray", null);
+    } else {
+      d.fx = d.x; d.fy = d.y; d.pinned = true;
+      d3.select(e.currentTarget).select("circle").attr("stroke-dasharray", "4 2");
+    }
+  })
+  .on("mousemove", (e, d) => {
+    ttName.textContent = d.id + ".md";
+    ttDesc.textContent = d.desc;
+    ttMeta.textContent = `${d.degree} connections`;
+    tooltip.style.left = (e.clientX + 14) + "px";
+    tooltip.style.top  = (e.clientY - 10) + "px";
+    tooltip.classList.add("visible");
+  })
+  .on("mouseleave", () => tooltip.classList.remove("visible"));
+
+// Circle
+node.append("circle")
+  .attr("r", d => rScale(d.degree))
+  .attr("fill", d => colorMap[d.type])
+  .attr("fill-opacity", d => d.type === "meta" ? 0.35 : 0.18)
+  .attr("stroke", d => colorMap[d.type])
+  .attr("stroke-width", d => d.type === "root" ? 2.5 : 1.5)
+  .attr("stroke-opacity", 0.9)
+  .style("filter", d => glowMap[d.type] || "none");
+
+// Label — main line
+node.append("text")
+  .attr("text-anchor", "middle")
+  .attr("dy", d => rScale(d.degree) + 13)
+  .attr("fill", "#94a3b8")
+  .attr("font-size", "11px")
+  .attr("font-weight", "600")
+  .text(d => d.label);
+
+// Degree badge inside circle (for larger nodes)
+node.filter(d => rScale(d.degree) >= 16)
+  .append("text")
+  .attr("text-anchor", "middle")
+  .attr("dy", "0.35em")
+  .attr("fill", d => colorMap[d.type])
+  .attr("font-size", d => Math.max(9, rScale(d.degree) * 0.5) + "px")
+  .attr("font-weight", "800")
+  .attr("opacity", 0.9)
+  .text(d => d.degree);
+
+// ── Tick ─────────────────────────────────────────────────────────────────────
+simulation.on("tick", () => {
+  link
+    .attr("x1", d => d.source.x)
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => {
+      const r = rScale(d.target.degree) + 8;
+      const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      return d.target.x - (dx / dist) * r;
+    })
+    .attr("y2", d => {
+      const r = rScale(d.target.degree) + 8;
+      const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      return d.target.y - (dy / dist) * r;
+    });
+
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+document.getElementById("stats").textContent =
+  `${nodeData.length} files · ${linkData.length} links`;
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+window.addEventListener("resize", () => {
+  simulation.force("center", d3.forceCenter(0, 0)).alpha(0.1).restart();
+});
+</script>
+</body>
+</html>

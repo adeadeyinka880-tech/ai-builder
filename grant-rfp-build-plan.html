@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grant Response Generator — MVP Build Plan</title>
+<style>
+  :root {
+    --bg:       #0d0f14;
+    --surface:  #161b25;
+    --surface2: #1e2535;
+    --surface3: #252d3d;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.12);
+    --text:     #e8eaf0;
+    --muted:    #94a3b8;
+    --dim:      #5a6a82;
+    --accent:   #4f8ef7;
+    --accent2:  #a78bfa;
+    --accent3:  #34d399;
+    --warn:     #f59e0b;
+    --danger:   #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .header p {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .mvp-badge {
+    display: inline-block;
+    background: rgba(167,139,250,0.12);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Flow canvas ── */
+  .flow {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Input row ── */
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .input-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .input-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+  .input-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .input-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Connector ── */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    position: relative;
+  }
+  .connector::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--border2), var(--accent2));
+    transform: translateX(-50%);
+  }
+  .connector-arrow {
+    width: 28px;
+    height: 28px;
+    background: var(--surface2);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    color: var(--accent2);
+    font-size: 14px;
+  }
+  .connector.to-output::before {
+    background: linear-gradient(to bottom, var(--accent2), var(--accent3));
+  }
+  .connector.to-output .connector-arrow {
+    border-color: rgba(52,211,153,0.4);
+    color: var(--accent3);
+  }
+
+  /* ── Sub-build cards ── */
+  .subbuild {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .subbuild-header {
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .subbuild-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .subbuild-1 .subbuild-num  { background: rgba(79,142,247,0.15);  border: 1px solid rgba(79,142,247,0.4);  color: var(--accent);  }
+  .subbuild-2 .subbuild-num  { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.4); color: var(--accent2); }
+  .subbuild-3 .subbuild-num  { background: rgba(52,211,153,0.12);  border: 1px solid rgba(52,211,153,0.4);  color: var(--accent3); }
+
+  .subbuild-meta { flex: 1; }
+  .subbuild-step {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 2px;
+  }
+  .subbuild-1 .subbuild-step  { color: var(--accent);  }
+  .subbuild-2 .subbuild-step  { color: var(--accent2); }
+  .subbuild-3 .subbuild-step  { color: var(--accent3); }
+
+  .subbuild-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .effort-pill {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .subbuild-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+  }
+  .subbuild-col {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .subbuild-col:last-child { border-right: none; }
+
+  .col-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 10px;
+  }
+  .col-label.in   { color: var(--accent); }
+  .col-label.proc { color: var(--warn); }
+  .col-label.out  { color: var(--accent3); }
+
+  .step-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .step-list li {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+    padding-left: 14px;
+    position: relative;
+  }
+  .step-list li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: var(--dim);
+    font-size: 16px;
+    line-height: 1.1;
+  }
+  .step-list li.highlight { color: var(--text); }
+  .step-list li.flag {
+    color: var(--warn);
+    font-size: 12px;
+  }
+  .step-list li.flag::before { color: var(--warn); }
+
+  /* Done looks like bar */
+  .done-bar {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .done-tag {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+  .done-text {
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+  .done-text strong { color: var(--muted); }
+
+  /* ── Output block ── */
+  .output-block {
+    background: linear-gradient(135deg, rgba(52,211,153,0.06) 0%, rgba(79,142,247,0.06) 100%);
+    border: 1px solid rgba(52,211,153,0.25);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .output-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(52,211,153,0.12);
+    border: 1px solid rgba(52,211,153,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .output-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+  .output-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .output-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .output-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .chip {
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .chip.green { border-color: rgba(52,211,153,0.3); color: var(--accent3); background: rgba(52,211,153,0.07); }
+
+  /* ── Out of v1 ── */
+  .oov1-section {
+    max-width: 900px;
+    margin: 40px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .oov1-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .oov1-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .oov1-chip {
+    font-size: 12px;
+    color: var(--dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+  .oov1-chip::before { content: '✕  '; color: var(--danger); font-size: 10px; }
+
+  /* ── Failure points ── */
+  .fail-section {
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+  .fail-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .fail-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--danger);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .fail-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .fail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .fail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(248,113,113,0.5);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .fail-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .fail-desc {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .fail-fix-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+  .fail-fix {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── V2/V3 roadmap ── */
+  .roadmap-section {
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+  .roadmap-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .roadmap-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .roadmap-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .roadmap-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .roadmap-col-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .roadmap-col-header.v2 { color: var(--accent2); }
+  .roadmap-col-header.v3 { color: var(--dim); }
+  .roadmap-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .roadmap-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .roadmap-num {
+    font-size: 11px;
+    font-weight: 800;
+    min-width: 20px;
+    padding-top: 2px;
+  }
+  .roadmap-num.v2 { color: var(--accent2); }
+  .roadmap-num.v3 { color: var(--dim); }
+  .roadmap-item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .roadmap-item-desc {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 640px) {
+    .fail-grid { grid-template-columns: 1fr; }
+    .roadmap-cols { grid-template-columns: 1fr; }
+  }
+
+  /* ── Starting prompt ── */
+  .prompt-section {
+    max-width: 900px;
+    margin: 24px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .prompt-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .prompt-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: pre-wrap;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 680px) {
+    .input-row { grid-template-columns: 1fr; }
+    .subbuild-body { grid-template-columns: 1fr; }
+    .subbuild-col { border-right: none; border-bottom: 1px solid var(--border); }
+    .subbuild-col:last-child { border-bottom: none; }
+    .header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="eyebrow">AI Automation Roadmap · Priority 7</div>
+  <div class="mvp-badge">MVP Scope</div>
+  <h1>Grant Response Generator</h1>
+  <p>A Cowork Skill that reads a grant RFP and org profile, then produces a complete first-draft grant application ready for human review before submission.</p>
+</div>
+
+<div class="flow">
+
+  <!-- ── INPUTS ── -->
+  <div class="input-row">
+    <div class="input-card">
+      <div class="input-icon">📄</div>
+      <div>
+        <div class="input-label">Input 1</div>
+        <div class="input-title">Grant RFP</div>
+        <div class="input-desc">PDF upload or pasted text — full RFP document including eligibility, evaluation criteria, required sections, and submission guidelines</div>
+      </div>
+    </div>
+    <div class="input-card">
+      <div class="input-icon">🏢</div>
+      <div>
+        <div class="input-label">Input 2</div>
+        <div class="input-title">Org Profile</div>
+        <div class="input-desc">One-page document — mission, programs, past grants awarded, key staff, financials summary</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    <div class="connector-arrow">↓</div>
+  </div>
+
+  <!-- ── SUB-BUILD 1 ── -->
+  <div class="subbuild subbuild-1">
+    <div class="subbuild-header">
+      <div class="subbuild-num">1</div>
+      <div class="subbuild-meta">
+        <div class="subbuild-step">Sub-build 1</div>
+        <div class="subbuild-name">RFP Parser + Org-Funder Match Report</div>
+      </div>
+      <div class="effort-pill">2–3 hrs</div>
+    </div>
+    <div class="subbuild-body">
+      <div class="subbuild-col">
+        <div class="col-label in">Inputs</div>
+        <ul class="step-list">
+          <li class="highlight">Grant RFP text</li>
+          <li class="highlight">Org profile doc</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label proc">Process</div>
+        <ul class="step-list">
+          <li>Extract funder name, deadline, award amount</li>
+          <li>Parse all required sections + word/page limits</li>
+          <li>Extract evaluation criteria + scoring weights</li>
+          <li>Check eligibility requirements against org</li>
+          <li>Score org vs. each criterion (1–5 scale)</li>
+          <li>Identify top 2–3 differentiators to lead with</li>
+          <li>Flag gaps to address or reframe</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label out">Output</div>
+        <ul class="step-list">
+          <li class="highlight">Funder summary card</li>
+          <li class="highlight">Required sections list + word limits</li>
+          <li class="highlight">Scored criteria table</li>
+          <li class="highlight">Top 3 differentiators</li>
+          <li class="highlight">2–3 gaps to reframe</li>
+        </ul>
+      </div>
+    </div>
+    <div class="done-bar">
+      <div class="done-tag">✓ Done</div>
+      <div class="done-text">Paste any grant RFP → <strong>structured match report in &lt;60s</strong> with scored criteria table and top differentiators. Testable with any open grants.gov or grants.gc.ca posting.</div>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    <div class="connector-arrow">↓</div>
+  </div>
+
+  <!-- ── SUB-BUILD 2 ── -->
+  <div class="subbuild subbuild-2">
+    <div class="subbuild-header">
+      <div class="subbuild-num">2</div>
+      <div class="subbuild-meta">
+        <div class="subbuild-step">Sub-build 2</div>
+        <div class="subbuild-name">Narrative Drafter</div>
+      </div>
+      <div class="effort-pill">2–3 hrs</div>
+    </div>
+    <div class="subbuild-body">
+      <div class="subbuild-col">
+        <div class="col-label in">Inputs</div>
+        <ul class="step-list">
+          <li class="highlight">Match report (from Sub-build 1)</li>
+          <li class="highlight">Org profile doc</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label proc">Process</div>
+        <ul class="step-list">
+          <li>Draft problem / need statement</li>
+          <li>Draft project approach section</li>
+          <li>Draft outcomes &amp; evaluation plan</li>
+          <li>Draft org qualifications section</li>
+          <li>Enforce RFP word limits per section</li>
+          <li class="flag">[HUMAN: verify] flags on all inferred claims</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label out">Output</div>
+        <ul class="step-list">
+          <li class="highlight">Complete narrative draft</li>
+          <li class="highlight">All RFP sections filled</li>
+          <li class="highlight">Under specified word limits</li>
+          <li class="highlight">Inline [HUMAN: verify] flags</li>
+        </ul>
+      </div>
+    </div>
+    <div class="done-bar">
+      <div class="done-tag">✓ Done</div>
+      <div class="done-text">Feed match report + org profile → <strong>complete draft narrative</strong> with all sections under word limits and inline verification flags. Validate section count and word counts against same RFP used in Sub-build 1.</div>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    <div class="connector-arrow">↓</div>
+  </div>
+
+  <!-- ── SUB-BUILD 3 ── -->
+  <div class="subbuild subbuild-3">
+    <div class="subbuild-header">
+      <div class="subbuild-num">3</div>
+      <div class="subbuild-meta">
+        <div class="subbuild-step">Sub-build 3</div>
+        <div class="subbuild-name">Budget Narrative + Submission Package</div>
+      </div>
+      <div class="effort-pill">1–2 hrs</div>
+    </div>
+    <div class="subbuild-body">
+      <div class="subbuild-col">
+        <div class="col-label in">Inputs</div>
+        <ul class="step-list">
+          <li class="highlight">Narrative draft (from Sub-build 2)</li>
+          <li class="highlight">Line-item budget (pasted or upload)</li>
+          <li class="highlight">Org bio boilerplate</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label proc">Process</div>
+        <ul class="step-list">
+          <li>Generate budget justification narrative per line item</li>
+          <li>Assemble all components in RFP section order</li>
+          <li>Insert org bio in correct position</li>
+          <li>Apply section headings matching RFP labels exactly</li>
+          <li>Final completeness check vs. RFP requirements</li>
+        </ul>
+      </div>
+      <div class="subbuild-col">
+        <div class="col-label out">Output</div>
+        <ul class="step-list">
+          <li class="highlight">Budget justification narrative</li>
+          <li class="highlight">Single assembled document</li>
+          <li class="highlight">Correct RFP section order</li>
+          <li class="highlight">Ready to paste into submission template</li>
+        </ul>
+      </div>
+    </div>
+    <div class="done-bar">
+      <div class="done-tag">✓ Done</div>
+      <div class="done-text">Feed budget + narrative draft → <strong>single assembled document</strong> in correct RFP section order, budget narrative inline. Human pastes into funder template — no reordering needed.</div>
+    </div>
+  </div>
+
+  <!-- Connector to output -->
+  <div class="connector to-output">
+    <div class="connector-arrow">↓</div>
+  </div>
+
+  <!-- ── FINAL OUTPUT ── -->
+  <div class="output-block">
+    <div class="output-icon">📝</div>
+    <div style="flex:1">
+      <div class="output-label">Final Deliverable</div>
+      <div class="output-title">Complete First-Draft Grant Application</div>
+      <div class="output-desc">A structured markdown document with all required RFP sections filled, under word limits, budget justification included, and inline [HUMAN: verify] flags marking anything that needs confirmation before submission. Human reviews, verifies flagged claims, formats for the funder portal, and submits.</div>
+      <div class="output-chips">
+        <span class="chip green">All RFP sections</span>
+        <span class="chip green">Word limits respected</span>
+        <span class="chip green">Budget narrative</span>
+        <span class="chip green">Inline verify flags</span>
+        <span class="chip">Markdown / Google Doc</span>
+        <span class="chip">Human reviews before submit</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /flow -->
+
+<!-- ── STARTING PROMPT ── -->
+<div class="prompt-section">
+  <div class="prompt-title">▶ Starting Prompt — Sub-build 1</div>
+  <div class="prompt-subtitle">Paste this into Claude Code to begin.</div>
+  <pre>Build a Cowork Skill called "Grant RFP Analyzer" that does the following:
+
+Inputs:
+1. Grant RFP text (pasted or uploaded PDF)
+2. Org profile (one-page doc: mission, programs, past grants, key staff, financials summary)
+
+Process:
+- Extract from the RFP: funder name, deadline, required sections with word/page limits,
+  evaluation criteria and weights (if listed), eligibility requirements
+- For each evaluation criterion, score the org profile 1–5 on how well it matches,
+  with a one-line justification
+- Identify the 2–3 org strengths to lead with in the narrative
+
+Output:
+A structured match report with:
+- Funder summary (name, deadline, total award, eligibility)
+- Required sections list with word limits
+- Scored criteria table (criterion | weight | org score | evidence)
+- Top 3 differentiators to emphasize
+- 2–3 gaps to address or reframe
+
+Keep the output clean and scannable — this feeds directly into the narrative drafting step.
+Test with a real RFP: download any open grant from grants.gc.ca or grants.gov and run it through.</pre>
+</div>
+
+<!-- ── OUT OF V1 ── -->
+<div class="oov1-section">
+  <div class="oov1-title">Out of v1</div>
+  <div class="oov1-list">
+    <span class="oov1-chip">Auto-submission to grant portals</span>
+    <span class="oov1-chip">Multi-funder batch processing</span>
+    <span class="oov1-chip">Grant eligibility screening</span>
+    <span class="oov1-chip">CRM integration</span>
+    <span class="oov1-chip">Deadline monitoring</span>
+    <span class="oov1-chip">Letter of inquiry (LOI) drafting</span>
+    <span class="oov1-chip">Budget spreadsheet generation</span>
+    <span class="oov1-chip">Supporting attachments compiler</span>
+  </div>
+</div>
+
+<!-- ── FAILURE POINTS ── -->
+<div class="fail-section">
+  <div class="fail-header">
+    <span class="fail-eyebrow">Risk Analysis</span>
+    <span class="fail-title">Failure Points &amp; Mitigations</span>
+  </div>
+  <div class="fail-grid">
+
+    <div class="fail-card">
+      <div class="fail-name">Scanned / image-based PDF</div>
+      <div class="fail-desc">Claude reads no content; match report looks plausible but is entirely fabricated from nothing.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Sub-build 1 outputs a "content detected" block listing the first 3 extracted sections. If blank, halt and instruct user to paste RFP text instead.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Missing evaluation criteria</div>
+      <div class="fail-desc">RFP has no explicit criteria or weights — Claude infers them silently. Scored table looks authoritative but may be wrong.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Flag entire criteria table <code style="font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">[INFERRED]</code>. Mandatory user review step before Sub-build 2 begins.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Buried eligibility disqualifier</div>
+      <div class="fail-desc">Geographic restriction or org-type requirement buried in RFP text is missed. Full application drafted for an ineligible org.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Sub-build 1 ends with a mandatory STOP block: all extracted eligibility requirements listed, user must confirm each one before narrative drafting begins.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Word limit silent overflow</div>
+      <div class="fail-desc">Sections exceed RFP word limits. Output looks complete. Submission gets disqualified.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Sub-build 2 appends <code style="font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">[487 / 500 words ✓]</code> or <code style="font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">[⚠ 523 / 500 — OVER]</code> after every section, plus a summary table at the top.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Flag fatigue / underuse</div>
+      <div class="fail-desc">Too many [HUMAN: verify] flags → user stops reading them. Too few → fabricated claims slip into the submission.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Flag rule: anything not directly sourced from the org profile gets flagged — not just things that "seem uncertain." Flag count shown at top of every narrative doc.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Budget narrative ≠ line-item numbers</div>
+      <div class="fail-desc">Narrative says "$45,000 for staff" but budget sheet has $47,500. Funder catches the discrepancy — red flag.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Sub-build 3 outputs a reconciliation table after generating the budget narrative — every dollar figure in the narrative alongside its source budget line item.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Section order mismatch</div>
+      <div class="fail-desc">Assembled package has sections in the wrong order. Submission is penalised or outright rejected by the funder.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Sub-build 3 outputs a section order checklist after assembly, mapping each section to its RFP label. Human verifies before submitting.</div>
+    </div>
+
+    <div class="fail-card">
+      <div class="fail-name">Stale org profile data</div>
+      <div class="fail-desc">Org profile has 2-year-old financials. Claude uses them without knowing they're outdated. Funder may flag inconsistencies.</div>
+      <div class="fail-fix-label">✦ Mitigation</div>
+      <div class="fail-fix">Org profile template includes "Data current as of: ___". If blank, Claude flags every financial figure <code style="font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">[HUMAN: confirm this is current]</code>.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── V2 / V3 ROADMAP ── -->
+<div class="roadmap-section">
+  <div class="roadmap-header">
+    <span class="roadmap-eyebrow">Future Versions</span>
+    <span class="roadmap-title">V2 / V3 Features</span>
+  </div>
+  <div class="roadmap-cols">
+
+    <div class="roadmap-col">
+      <div class="roadmap-col-header v2">V2 — Complete the core workflow</div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v2">1</div>
+        <div>
+          <div class="roadmap-item-name">LOI Drafter</div>
+          <div class="roadmap-item-desc">Drafts the letter of inquiry required before a full application — same inputs, shorter output, top-of-funnel step</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v2">2</div>
+        <div>
+          <div class="roadmap-item-name">Budget Spreadsheet Generation</div>
+          <div class="roadmap-item-desc">Produces formatted spreadsheet (Google Sheets / CSV) with category totals alongside the narrative — v1 does words only</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v2">3</div>
+        <div>
+          <div class="roadmap-item-name">Supporting Attachments Compiler</div>
+          <div class="roadmap-item-desc">Pulls org financials, board list, tax-exempt letter from Google Drive — assembles with funder-specified filenames</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v2">4</div>
+        <div>
+          <div class="roadmap-item-name">Multi-RFP Eligibility Screener</div>
+          <div class="roadmap-item-desc">Paste 5–10 RFPs → ranked fit table in seconds; produces the shortlist before any application is written</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="roadmap-col">
+      <div class="roadmap-col-header v3">V3 — Scale and automate the pipeline</div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v3">5</div>
+        <div>
+          <div class="roadmap-item-name">Deadline Monitoring</div>
+          <div class="roadmap-item-desc">Chrome agent watches grants.gov / grants.gc.ca for new postings; weekly digest + 30/7-day deadline alerts</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v3">6</div>
+        <div>
+          <div class="roadmap-item-name">Grant Tracking CRM</div>
+          <div class="roadmap-item-desc">Logs every application (funder, amount, status, outcome); surfaces renewals; Notion or Airtable backend</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v3">7</div>
+        <div>
+          <div class="roadmap-item-name">Multi-Funder Batch Processing</div>
+          <div class="roadmap-item-desc">Full pipeline run against multiple RFPs in one session; ranked applications in priority order</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-num v3">8</div>
+        <div>
+          <div class="roadmap-item-name">Portal Auto-Submission</div>
+          <div class="roadmap-item-desc">Auto-fills funder portals via Chrome agent; mandatory human checkpoint before every submit click</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
