@@ -408,7 +408,7 @@
   <div class="container">
     <div class="header-inner">
       <div>
-        <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 2</div>
+        <div class="header-eyebrow">AI Builder Automation Portfolio · Level 2 · Sprint 4</div>
         <h1>AI Builder Plan<br><span>Omo Fabs</span></h1>
         <div class="date-badge">April 21, 2026</div>
       </div>
@@ -761,6 +761,114 @@
   </div>
 </section>
 
+<!-- ══════════════════════════════════════ SPRINT 4 ══════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <h2><span class="icon">🏗</span> Sprint 4 — What I Built</h2>
+
+    <!-- ── #1 Grant Response Generator — Scope & Build Plan ── -->
+    <div class="build-card p1">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#1 · S5 Build</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,142,247,0.15);color:#7eb5fa;">📋 Grant Response Generator</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">Scoped the full Grant Response Generator MVP — 3-sub-build pipeline, 8 failure points with mitigations, V2/V3 feature roadmap, and a starting prompt ready to execute in Sprint 5.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What I Built</div>
+          <p>End-to-end build plan for a Cowork Skill that reads a grant RFP + org profile and produces a complete first-draft application. Defined all 3 sub-builds: RFP Parser + Match Report → Narrative Drafter → Budget + Submission Package. Documented 8 known failure modes with specific mitigations. Mapped V2/V3 features ordered by priority.</p>
+        </div>
+        <div>
+          <div class="build-col-label">The Artifacts</div>
+          <p><code>grant-rfp-build-plan.html</code>: CSS flow diagram of the full pipeline, inputs, outputs, failure points, and V2/V3 roadmap. <code>s5-scope.md</code>: full MVP scope with inputs, triggers, output destinations, constraints, and definition of done. Build plan written to Notion and added to the live dashboard.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · 1 session</span>
+        <span class="badge badge-hours">Sprint 5 is execution-ready</span>
+        <span class="badge-tools">Claude Code · Notion MCP · Vercel</span>
+      </div>
+    </div>
+
+    <!-- ── #2 Knowledge Wiki — 10 Articles ── -->
+    <div class="build-card p2">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#2 · Knowledge Base</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.15);color:#c4b5fd;">📚 Knowledge Wiki</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">10 structured wiki articles giving the grant-writing AI everything it needs to know — funder types, RFP anatomy, scoring methodology, vocabulary switching, evidence standards, quality rules, and more.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">The 10 Articles</div>
+          <p>Grant Types &amp; Funder Archetypes · RFP Anatomy · Org Profile Components · Narrative Section Frameworks · Evidence &amp; Citation Standards · Budget Conventions · Funder-Org Alignment Methodology · Context &amp; Vocabulary Switching · Quality Rules &amp; Hard Limits · Output Formats &amp; Submission Standards</p>
+        </div>
+        <div>
+          <div class="build-col-label">The Infrastructure</div>
+          <p><code>knowledge-base/</code> folder with 10 individual <code>wiki-*.md</code> files cross-linked with [[wikilinks]]. Navigation <code>index.md</code> with execution order diagram. Dated <code>log.md</code> for change tracking. <code>knowledge-graph.html</code>: D3.js force-directed graph of all articles and their 45 cross-links, sized by connection degree. <code>/ingest-info</code> Claude Code skill for adding new sources.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-medium">Medium Lift · 1 session</span>
+        <span class="badge badge-hours">10 articles · 45 cross-links</span>
+        <span class="badge-tools">Claude Code · Notion MCP · D3.js</span>
+      </div>
+    </div>
+
+    <!-- ── #3 Build Spec — s5-build-spec.md ── -->
+    <div class="build-card p3">
+      <div class="build-card-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="rank-num">#3 · Spec</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(52,211,153,0.15);color:#6ee7b7;">📄 Build Spec</span>
+        </div>
+        <span class="status-badge shipped">Shipped</span>
+      </div>
+      <div class="build-outcome">A single executable build spec combining scope + knowledge base — what the skill does, every input with validation rules, all outputs with exact format templates, which wiki files to load per sub-build, and a 10-point quality bar.</div>
+      <div class="build-cols">
+        <div>
+          <div class="build-col-label">What's in the Spec</div>
+          <p>Trigger · 3 inputs with specific validation logic · Sub-build process steps with done criteria · Exact output format templates for all 3 sub-builds · Destination table (nothing submitted automatically, nothing stored) · Which knowledge-base files to load for each sub-build · Tools and credentials (none needed in v1)</p>
+        </div>
+        <div>
+          <div class="build-col-label">Quality Controls</div>
+          <p>10 specific pass/fail quality checks: content detected confirmation, eligibility confirmed by user, criteria labelled [INFERRED] if not explicit, every section under word limit, flag count reported at top, no fabricated statistics, no unconfirmed partnerships, budget reconciliation table, section order checklist, mandatory human review before submission.</p>
+        </div>
+      </div>
+      <div class="build-footer">
+        <span class="badge badge-quick">Quick Build · 1 session</span>
+        <span class="badge badge-hours">10 quality checks · 8 failure mitigations</span>
+        <span class="badge-tools">s5-build-spec.md · knowledge-base/</span>
+      </div>
+    </div>
+
+    <!-- ── Live artifacts ── -->
+    <div class="live-links-block">
+      <div class="live-links-label">📦 Sprint 4 Artifacts</div>
+      <div class="live-links-grid">
+        <a class="live-link" href="grant-rfp-build-plan.html" target="_blank">
+          <span class="live-dot"></span>Build Plan (Visual)
+        </a>
+        <a class="live-link" href="knowledge-base/knowledge-graph.html" target="_blank">
+          <span class="live-dot"></span>Knowledge Graph
+        </a>
+        <a class="live-link" href="s5-build-spec.md" target="_blank">
+          <span class="live-dot"></span>s5-build-spec.md
+        </a>
+        <a class="live-link" href="s5-scope.md" target="_blank">
+          <span class="live-dot"></span>s5-scope.md
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ══════════════════════════════════════ MY SYSTEM ══════════════════════════════════════ -->
 <section>
   <div class="container">
@@ -781,36 +889,36 @@
           <div class="sprint-check">Time audit · 7 build cards · Plan doc</div>
         </div>
 
-        <!-- S2 current -->
-        <div class="sprint-current">
-          <div class="sprint-label">Sprint 2</div>
+        <!-- S2 done -->
+        <div class="sprint-done">
+          <div class="sprint-label">Sprint 2 ✓</div>
           <div class="sprint-title">Dashboard + Agent + Deployment</div>
-          <div class="sprint-items">
-            <span>Kanban dashboard (Notion live)</span>
-            <span>Automation Advisor agent</span>
-            <span>Deployed to Vercel</span>
-          </div>
+          <div class="sprint-check">Kanban · Advisor agent · Vercel</div>
         </div>
 
-        <!-- S3 -->
-        <div class="sprint-card">
-          <div class="sprint-label">Sprint 3</div>
-          <div class="sprint-title">Automated n8n or Claude Routines Workflow</div>
-          <div class="sprint-coming">Coming in Sprint 3</div>
+        <!-- S3 done -->
+        <div class="sprint-done">
+          <div class="sprint-label">Sprint 3 ✓</div>
+          <div class="sprint-title">Routines + Workflow Automation</div>
+          <div class="sprint-check">Claude routines · Scheduled tasks</div>
         </div>
 
-        <!-- S4 -->
-        <div class="sprint-card">
-          <div class="sprint-label">Sprint 4</div>
-          <div class="sprint-title">Knowledge Wiki Context System</div>
-          <div class="sprint-coming">Coming in Sprint 4</div>
+        <!-- S4 done -->
+        <div class="sprint-done">
+          <div class="sprint-label">Sprint 4 ✓</div>
+          <div class="sprint-title">Knowledge Wiki + S5 Build Plan</div>
+          <div class="sprint-check">10 wiki articles · Build spec · Graph</div>
         </div>
 
-        <!-- S5 -->
-        <div class="sprint-card">
+        <!-- S5 current -->
+        <div class="sprint-current">
           <div class="sprint-label">Sprint 5</div>
-          <div class="sprint-title">Custom Agentic Workflow</div>
-          <div class="sprint-coming">Coming in Sprint 5</div>
+          <div class="sprint-title">Grant Response Generator</div>
+          <div class="sprint-items">
+            <span>RFP Parser + Match Report</span>
+            <span>Narrative Drafter</span>
+            <span>Budget + Submission Package</span>
+          </div>
         </div>
 
       </div>
