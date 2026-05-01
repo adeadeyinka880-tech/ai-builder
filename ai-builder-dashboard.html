@@ -1350,5 +1350,187 @@ initBoard();
   });
 }());
 </script>
+
+<!-- ── Build Plans Section ── -->
+<style>
+.build-plans-section {
+  max-width: 1100px;
+  margin: 48px auto 0;
+  padding: 0 24px 64px;
+}
+.build-plans-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.build-plans-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.build-plans-header .bp-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.bp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.bp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.bp-card:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.08);
+}
+.bp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bp-step-badge {
+  background: var(--surface2);
+  color: var(--accent2);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(167,139,250,0.25);
+  white-space: nowrap;
+}
+.bp-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.bp-card-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.bp-done-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.bp-done-text {
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+.bp-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.bp-effort {
+  font-size: 12px;
+  color: var(--dim);
+}
+.bp-effort strong { color: var(--muted); }
+.bp-context {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+.bp-context-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+.bp-context-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.bp-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+@media (max-width: 640px) {
+  .bp-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<section class="build-plans-section">
+  <div class="build-plans-header">
+    <span class="bp-eyebrow">Mode 3 · Build Planner</span>
+    <h2>Build Plans</h2>
+  </div>
+
+  <!-- Grant Response Generator -->
+  <div class="bp-context">
+    <div class="bp-context-title">🏠 Grant Response Generator — MVP</div>
+    <div class="bp-context-text">A Cowork Skill that reads a grant RFP + org profile and produces a complete first-draft grant application: problem statement, project approach, outcomes plan, org qualifications, and budget narrative — ready for human review before submission.</div>
+  </div>
+  <div class="bp-section-label">Sub-builds · smallest first</div>
+  <div class="bp-grid">
+    <div class="bp-card">
+      <div class="bp-card-header">
+        <span class="bp-step-badge">Sub-build 1</span>
+      </div>
+      <div class="bp-card-title">RFP Parser + Org-Funder Match Report</div>
+      <div class="bp-card-desc">Claude extracts funder priorities, required sections, word limits, and evaluation criteria from the RFP. Scores org profile 1–5 per criterion and surfaces the top 2–3 differentiators to lead with.</div>
+      <div class="bp-done-label">Done looks like</div>
+      <div class="bp-done-text">Paste any grant RFP → structured match report in &lt;60s with scored criteria table and differentiators. Testable with any open grants.gov or grants.gc.ca posting.</div>
+      <div class="bp-meta">
+        <span class="bp-effort"><strong>Est:</strong> 1 session · 2–3 hrs</span>
+      </div>
+    </div>
+    <div class="bp-card">
+      <div class="bp-card-header">
+        <span class="bp-step-badge">Sub-build 2</span>
+      </div>
+      <div class="bp-card-title">Narrative Drafter</div>
+      <div class="bp-card-desc">Using the match report, Claude drafts all required narrative sections in sequence — problem statement, approach, outcomes plan, org qualifications — respecting RFP word limits. Flags inferred claims with <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:4px;">[HUMAN: verify]</code>.</div>
+      <div class="bp-done-label">Done looks like</div>
+      <div class="bp-done-text">Feed match report + org profile → complete narrative draft with all sections under word limits and inline verification flags.</div>
+      <div class="bp-meta">
+        <span class="bp-effort"><strong>Est:</strong> 1 session · 2–3 hrs</span>
+      </div>
+    </div>
+    <div class="bp-card">
+      <div class="bp-card-header">
+        <span class="bp-step-badge">Sub-build 3</span>
+      </div>
+      <div class="bp-card-title">Budget Narrative + Submission Package</div>
+      <div class="bp-card-desc">Claude generates a budget justification narrative from a line-item budget and assembles the full submission package — narrative sections, budget narrative, org bio — in RFP section order.</div>
+      <div class="bp-done-label">Done looks like</div>
+      <div class="bp-done-text">Feed budget + narrative draft → single assembled document matching RFP section order. Human pastes into funder template — no reordering needed.</div>
+      <div class="bp-meta">
+        <span class="bp-effort"><strong>Est:</strong> 1 session · 1–2 hrs</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 </body>
 </html>
